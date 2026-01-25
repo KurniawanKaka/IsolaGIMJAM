@@ -3,32 +3,35 @@ using UnityEngine;
 public class ObjectSway : MonoBehaviour
 {
     [Header("Sway Settings")]
-    public float amount = 0.02f;
-    public float maxAmount = 0.06f;
-    public float smoothAmount = 6f;
+    public float amount = 0.05f;
+    public float maxAmount = 0.1f;
+    public float smoothAmount = 5f;
 
+    [HideInInspector] public bool canSway = true;
     private Vector3 initialPos;
 
     void Start()
     {
-        // Simpan posisi lokal awal (biasanya 0,0,0 kalau udah diparenting)
+        // Mencatat posisi awal relatif terhadap Parent
         initialPos = transform.localPosition;
     }
 
     void Update()
     {
-        // 1. Ambil Input Mouse
-        float movementX = -Input.GetAxis("Mouse X") * amount;
-        float movementY = -Input.GetAxis("Mouse Y") * amount;
+        Vector3 targetPos = initialPos;
 
-        // 2. Batasin (Clamp)
-        movementX = Mathf.Clamp(movementX, -maxAmount, maxAmount);
-        movementY = Mathf.Clamp(movementY, -maxAmount, maxAmount);
+        if (canSway)
+        {
+            float moveX = -Input.GetAxis("Mouse X") * amount;
+            float moveY = -Input.GetAxis("Mouse Y") * amount;
 
-        // 3. Hitung Target Posisi
-        Vector3 finalPosition = new Vector3(movementX, movementY, 0);
+            moveX = Mathf.Clamp(moveX, -maxAmount, maxAmount);
+            moveY = Mathf.Clamp(moveY, -maxAmount, maxAmount);
 
-        // 4. Gerakin Spritenya (Relatif terhadap Holder)
-        transform.localPosition = Vector3.Lerp(transform.localPosition, finalPosition + initialPos, Time.deltaTime * smoothAmount);
+            targetPos = new Vector3(initialPos.x + moveX, initialPos.y + moveY, initialPos.z);
+        }
+
+        // Lerp biar goyangannya kerasa smooth, nggak kaku
+        transform.localPosition = Vector3.Lerp(transform.localPosition, targetPos, Time.deltaTime * smoothAmount);
     }
 }
