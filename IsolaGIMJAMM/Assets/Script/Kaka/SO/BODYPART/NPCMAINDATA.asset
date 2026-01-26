@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad05b79dd20fb0f4f88c40b87138cf2f, type: 3}
+  m_Name: NPCMAINDATA
+  m_EditorClassIdentifier: 
+  hairs:
+  - {fileID: 11400000, guid: b923e4a481534ec4caed4326134b7def, type: 2}
+  - {fileID: 11400000, guid: 9338146a3d3b4bc4a9d8a3d2c1db4d16, type: 2}
+  - {fileID: 11400000, guid: 4fbb414130e62174d87c7e04f509476c, type: 2}
+  heads:
+  - {fileID: 11400000, guid: 3552e260b7e2e914ebcff1486a85b08e, type: 2}
+  - {fileID: 11400000, guid: e186bd7a21c5a524ea7c93166b24bcfc, type: 2}
+  - {fileID: 11400000, guid: 7c7af5094e728954f90a86cd7eafec99, type: 2}
+  shirts:
+  - {fileID: 11400000, guid: ba3f758190db7b74c829edba1c2a498f, type: 2}
+  - {fileID: 11400000, guid: 90d3c93b951bd264085b245c18f1d6d0, type: 2}
+  - {fileID: 11400000, guid: e44ddde08f9a52144a6b14b5c12044d8, type: 2}
+  pants:
+  - {fileID: 11400000, guid: b0243f539da0f144aa347d70c4e655fe, type: 2}
+  - {fileID: 11400000, guid: 65276049b58474c4ba7f6b79c851c078, type: 2}
+  - {fileID: 11400000, guid: 8ea6eb8d044596c42820d96e15b08639, type: 2}
+  shoes:
+  - {fileID: 11400000, guid: 49d19cb5745e6bc46a9999133c6b1339, type: 2}
+  - {fileID: 11400000, guid: 60b3e6eaeaf5d034db7265efe0625a11, type: 2}
+  - {fileID: 11400000, guid: 2fd495bf1b60272468471824755f2556, type: 2}
