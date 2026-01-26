@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
@@ -7,22 +6,41 @@ public class AudioManager : MonoBehaviour
     [SerializeField] AudioSource musicSource;
     [SerializeField] AudioSource SFXSource;
 
-    [Header("======= Audio Clip =======")]
+    [Header("======= Music Clip =======")]
     public AudioClip Background;
-    public AudioClip Shutter;
 
-    public void Start()
+    [Header("======= SFX Lists =======")]
+    public AudioClip[] LiftSfx;       // Untuk Button 1
+    public AudioClip[] SecondSfxList;  // Untuk Button 2
+
+    private void Start()
     {
-        musicSource.clip = Background;
-        musicSource.Play();
-
+        if (Background != null && musicSource != null)
+        {
+            musicSource.clip = Background;
+            musicSource.Play();
+        }
     }
 
-    public void PlaySFX(AudioClip clip)
+    // Fungsi untuk Button 1
+    public void PlayRandomLiftSFX()
     {
-        SFXSource.PlayOneShot(clip);
+        ExecuteRandomSFX(LiftSfx);
     }
 
-   
+    // Fungsi untuk Button 2
+    public void PlayRandomSecondSFX()
+    {
+        ExecuteRandomSFX(SecondSfxList);
+    }
+
+    // Logika internal (Ducking otomatis aktif karena lewat SFXSource)
+    private void ExecuteRandomSFX(AudioClip[] clips)
+    {
+        if (clips != null && clips.Length > 0 && SFXSource != null)
+        {
+            int randomIndex = Random.Range(0, clips.Length);
+            SFXSource.PlayOneShot(clips[randomIndex]);
+        }
+    }
 }
-
