@@ -4,9 +4,12 @@ using System.Collections;
 
 public class PhotoMechanic : MonoBehaviour
 {
+    [Header("Game Managers")]
+    public DebugGameManager gm; // Drag GameManager kesini untuk kurangi nyawa
+
     [Header("Cameras")]
-    public Camera fpsCam;
-    public Camera overlayCam;
+    public Camera fpsCam;       // Kamera Utama
+    public Camera overlayCam;   // Kamera UI/Overlay (Opsional)
     public FPSCameraController camController;
 
     [Header("Visuals")]
@@ -14,11 +17,10 @@ public class PhotoMechanic : MonoBehaviour
     public GameObject viewfinderObj;
     public Image flashPanel;
 
-    [Header("Settings (Default Hardcoded)")]
-    public string targetTag = "Suspect";
-    public float detectionRadius = 25f;
+    [Header("Settings")]
+    public float maxDistance = 100f; // Jarak maksimal foto
 
-    // Koordinat Posisi & Scale
+    // Koordinat Posisi & Scale (Sesuai kode aslimu)
     public Vector3 idlePos = new Vector3(0.333f, -0.184f, 0.4f);
     public Vector3 aimPos = new Vector3(0.115f, -0.116f, 0.4f);
     public Vector3 idleScale = new Vector3(0.172881f, 0.172881f, 0.172881f);
@@ -33,7 +35,8 @@ public class PhotoMechanic : MonoBehaviour
     [HideInInspector] public float yOffset = 0f;
     [HideInInspector] public bool canAim = true;
 
-    private bool isAiming, hasTakenPhoto;
+    private bool isAiming;
+    private bool inPhotoSequence = false; // Pengganti hasTakenPhoto agar bisa foto berkali-kali
     private Vector3 currentBasePos;
 
     void Start()
@@ -46,28 +49,32 @@ public class PhotoMechanic : MonoBehaviour
         transform.localScale = idleScale;
 
         if (overlayCam != null) overlayCam.fieldOfView = normalFOV;
+
+        // Auto-assign kamera jika lupa drag
+        if (fpsCam == null) fpsCam = Camera.main;
     }
 
     void Update()
     {
-        // Jika sudah foto, stop semua input (Kamera mati permanen)
-        if (hasTakenPhoto) return;
+        // Jika sedang proses jepret, matikan input sementara
+        if (inPhotoSequence) return;
 
         // Logika Bidik
         if (canAim)
         {
-            if (Input.GetMouseButtonDown(1)) RunAim(true);
-            if (Input.GetMouseButtonUp(1)) RunAim(false);
+            if (Input.GetMouseButtonDown(1)) RunAim(true); // Klik Kanan Tahan
+            if (Input.GetMouseButtonUp(1)) RunAim(false);  // Lepas Klik Kanan
 
-            // Input Motret: Hanya jika sedang bidik & viewfinder sudah aktif
-            if (isAiming && viewfinderObj != null && viewfinderObj.activeSelf && Input.GetMouseButtonDown(0))
+            // Input Motret (Klik Kiri): Hanya jika sedang bidik
+            if (isAiming && Input.GetMouseButtonDown(0))
             {
                 StartCoroutine(SequenceFoto());
             }
         }
-        else if (isAiming)
+        else
         {
-            RunAim(false);
+            // Jika dipaksa tidak boleh aim (misal lagi lihat buku), kembalikan posisi
+            if (isAiming) RunAim(false);
         }
     }
 
@@ -93,7 +100,7 @@ public class PhotoMechanic : MonoBehaviour
             swayScript.gameObject.SetActive(true);
         }
 
-        // 1. Animasi POSISI - EaseInOutQuad agar "Seeeeet"
+        // 1. Animasi POSISI
         LeanTween.value(gameObject, currentBasePos, enter ? aimPos : idlePos, animDuration)
             .setEaseInOutQuad()
             .setOnUpdateVector3((Vector3 val) => { currentBasePos = val; });
@@ -105,16 +112,16 @@ public class PhotoMechanic : MonoBehaviour
         // 3. Animasi FOV
         LeanTween.value(gameObject, fpsCam.fieldOfView, enter ? zoomFOV : normalFOV, animDuration)
             .setEaseInOutQuad()
-            .setOnUpdate((float val) => {
+            .setOnUpdate((float val) =>
+            {
                 fpsCam.fieldOfView = val;
                 if (overlayCam != null) overlayCam.fieldOfView = val;
 
-                // Threshold progres (0-1)
+                // Threshold progres (0-1) untuk menyalakan UI Viewfinder
                 float t = enter ?
                     Mathf.InverseLerp(normalFOV, zoomFOV, val) :
                     Mathf.InverseLerp(zoomFOV, normalFOV, val);
 
-                // Aktifkan viewfinder jika zoom sudah 70%
                 if (enter && t > 0.7f && viewfinderObj != null && !viewfinderObj.activeSelf)
                 {
                     viewfinderObj.SetActive(true);
@@ -123,112 +130,94 @@ public class PhotoMechanic : MonoBehaviour
             });
     }
 
+    // --- LOGIKA UTAMA JEPRET ---
     IEnumerator SequenceFoto()
     {
-        // Kunci status agar tidak bisa motret/aim lagi
-        hasTakenPhoto = true;
+        inPhotoSequence = true; // Kunci input
 
+        // Kunci pergerakan mouse kamera
         if (camController != null) camController.isLocked = true;
 
-        // 1. Efek Flash
-        flashPanel.color = Color.white;
-
-        // 2. Jalankan Deteksi
-        DetectSuspect();
-
-        // Flash Fade Out
-        float tFlash = 0;
-        while (tFlash < 1)
+        // 1. Efek Flash (Putih ke Transparan)
+        if (flashPanel != null)
         {
-            tFlash += Time.deltaTime * 4f;
-            flashPanel.color = new Color(1, 1, 1, 1 - tFlash);
-            yield return null;
+            flashPanel.color = Color.white;
+            LeanTween.value(gameObject, 1f, 0f, 0.5f).setIgnoreTimeScale(true)
+                .setOnUpdate((float val) =>
+                {
+                    flashPanel.color = new Color(1, 1, 1, val);
+                });
         }
-        flashPanel.color = Color.clear;
 
-        // 3. Freeze Dramatis
-        yield return new WaitForSeconds(1.0f);
+        // 2. JALANKAN LOGIKA RAYCAST (DETEKSI TARGET)
+        CheckForTarget();
 
+        // 3. Freeze Dramatis (Jeda sebentar setelah foto)
+        yield return new WaitForSeconds(0.1f);
+
+        Time.timeScale = 1f;
+
+        // Buka kunci kamera
         if (camController != null) camController.isLocked = false;
 
-        // 4. TURUN OTOMATIS & MATI TOTAL
-        canAim = false;
-        RunAim(false);
+        inPhotoSequence = false; // Buka input lagi (Bisa foto lagi)
 
-        Debug.Log("Foto selesai. Kamera dinonaktifkan untuk level ini.");
+        // Opsional: Jika ingin kamera turun otomatis setelah foto, uncomment baris ini:
+        RunAim(false);
     }
 
-    void DetectSuspect()
+    // --- FUNGSI BARU: PENGGANTI LOGIKA LAMA ---
+    void CheckForTarget()
     {
-        GameObject[] suspects = GameObject.FindGameObjectsWithTag(targetTag);
-        GameObject bestTarget = null;
-        float maxArea = 0f;
-        Rect viewRect = new Rect(Screen.width * 0.25f, Screen.height * 0.25f, Screen.width * 0.5f, Screen.height * 0.5f);
+        // Tembak Raycast persis dari tengah layar kamera (Titik Fokus Viewfinder)
+        Ray ray = fpsCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+        RaycastHit hit;
 
-        foreach (GameObject obj in suspects)
+        // Debug Visual di Scene view (Garis Merah)
+        Debug.DrawRay(ray.origin, ray.direction * maxDistance, Color.red, 2f);
+
+        if (Physics.Raycast(ray, out hit, maxDistance))
         {
-            float dist = Vector3.Distance(fpsCam.transform.position, obj.transform.position);
-            if (dist > detectionRadius) continue;
+            // Cek apakah kena HITBOX BAGIAN TUBUH?
+            NPCPartHitbox hitPart = hit.collider.GetComponent<NPCPartHitbox>();
+            Time.timeScale = 0.1f;
 
-            Vector3 dirToObj = (obj.transform.position - fpsCam.transform.position).normalized;
-            if (Vector3.Dot(fpsCam.transform.forward, dirToObj) < 0.5f) continue;
-
-            // Raycast agar tidak tembus dinding
-            RaycastHit hit;
-            if (Physics.Raycast(fpsCam.transform.position, dirToObj, out hit, detectionRadius))
+            if (hitPart != null)
             {
-                if (!hit.collider.CompareTag(targetTag) && hit.collider.gameObject != obj) continue;
+                // Ambil Logic dari PlayerInteraction sebelumnya
+                int targetColorIndex = GameColorManager.Instance.currentRoundTargetColorIndex;
+                int clickedColorIndex = hitPart.GetMyColorIndex();
+
+                Debug.Log($"JEPRET! Bagian: {hitPart.name} | Warna: {clickedColorIndex} | Target: {targetColorIndex}");
+
+                if (clickedColorIndex == targetColorIndex)
+                {
+                    Debug.Log("FOTO SUKSES! Warna Benar.");
+                    GameColorManager.Instance.UnlockColor(targetColorIndex);
+
+
+                    // Efek suara sukses bisa ditaruh disini
+                }
+                else
+                {
+                    Debug.Log("FOTO GAGAL! Warna Salah.");
+
+                    // Kurangi Nyawa
+
+                    if (gm != null) gm.nyawa--;
+
+                    // Efek suara gagal bisa ditaruh disini
+                }
             }
-
-            Collider2D col2D = obj.GetComponent<Collider2D>();
-            if (col2D == null) continue;
-
-            float area = CalculateOverlap2D(col2D, viewRect);
-            if (area > maxArea)
+            else
             {
-                maxArea = area;
-                bestTarget = obj;
+                Debug.Log("Meleset: Tidak mengenai bagian tubuh NPC (Kena " + hit.collider.name + ")");
             }
-        }
-
-        if (bestTarget != null && maxArea > 0)
-        {
-            Debug.Log("<color=green>SUCCESS:</color> " + bestTarget.name);
-            bestTarget.GetComponent<NPCAttribute>()?.RevealColor();
         }
         else
         {
-            Debug.Log("<color=red>FAILED:</color> Target tidak ditemukan di frame.");
+            Debug.Log("Meleset: Tidak mengenai apapun.");
+            Time.timeScale = 1f;
         }
-    }
-
-    float CalculateOverlap2D(Collider2D col, Rect viewRect)
-    {
-        Bounds b = col.bounds;
-        Vector3 c = b.center, e = b.extents;
-        Vector3[] worldPoints = {
-            c + new Vector3(-e.x, -e.y, -e.z), c + new Vector3(e.x, -e.y, -e.z),
-            c + new Vector3(-e.x, e.y, -e.z), c + new Vector3(e.x, e.y, -e.z),
-            c + new Vector3(-e.x, -e.y, e.z), c + new Vector3(e.x, -e.y, e.z),
-            c + new Vector3(-e.x, e.y, e.z), c + new Vector3(e.x, e.y, e.z)
-        };
-
-        float minX = Mathf.Infinity, minY = Mathf.Infinity, maxX = -Mathf.Infinity, maxY = -Mathf.Infinity;
-        int visibleCount = 0;
-
-        foreach (Vector3 wp in worldPoints)
-        {
-            Vector3 sP = fpsCam.WorldToScreenPoint(wp);
-            if (sP.z < 0) continue;
-            minX = Mathf.Min(minX, sP.x); minY = Mathf.Min(minY, sP.y);
-            maxX = Mathf.Max(maxX, sP.x); maxY = Mathf.Max(maxY, sP.y);
-            visibleCount++;
-        }
-
-        if (visibleCount == 0) return 0;
-        Rect objRect = Rect.MinMaxRect(minX, minY, maxX, maxY);
-        float xOv = Mathf.Max(0, Mathf.Min(objRect.xMax, viewRect.xMax) - Mathf.Max(objRect.xMin, viewRect.xMin));
-        float yOv = Mathf.Max(0, Mathf.Min(objRect.yMax, viewRect.yMax) - Mathf.Max(objRect.yMin, viewRect.yMin));
-        return xOv * yOv;
     }
 }

@@ -7,17 +7,23 @@ public class ItemLookDownSwitcher : MonoBehaviour
     public PhotoMechanic photoScript;
     public Transform bookParent;
 
+
     [Header("Settings")]
     public float thresholdAngle = 47f;
     public float transitionSpeed = 8f;
 
     [Header("Positions")]
-    public float bookYHidden = -0.3892f;
-    public float bookYVisible = -0.179f;
+    public float bookYHidden = -0.407f;
+    public float bookYVisible = 0.013f;
     public float camYOffsetMax = -0.21f;
 
     private float currentRatio = 0f;
     private Coroutine transitionRoutine;
+
+    void Start()
+    {
+
+    }
 
     // Dipanggil dari FPSCameraController
     public void CheckPitch(float currentPitch)
@@ -55,7 +61,11 @@ public class ItemLookDownSwitcher : MonoBehaviour
             photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
 
             // Sync canAim
-            photoScript.canAim = (currentRatio < 0.1f);
+            if (currentRatio < 0.1f)
+            {
+
+                photoScript.canAim = true;
+            }
 
             yield return null;
         }

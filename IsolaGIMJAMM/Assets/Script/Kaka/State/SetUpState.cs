@@ -9,12 +9,20 @@ using UnityEngine.UI;
 public class SetUpState : GameBaseState
 {
 
+    public Transform playertransform;
+
+    [Header("Book Visuals")]
+    public GameObject bookOpenObj;   // Drag Objek 'Book_Visual_OPEN' kesini
+    public GameObject bookClosedObj;
+
+
     [Header("Databases")]
     public NPCDatabase npcDatabase; // <--- WAJIB ADA
     [Header("Door System")]
     public DoorController doorController; // Drag script LiftDoorController kesini
     float targetSize = 0.1889712f;
     float flipDuration = 1f;
+
 
     public Image rambutt, kepalaa, bajuu, celanaa, sepatuu;
 
@@ -172,6 +180,7 @@ public class SetUpState : GameBaseState
         // 3. Update UI (Sekarang UI sudah bisa baca data dari Manager dengan benar)
         UpdateMissionText(targetData);
 
+
         // 4. Random Kursi
         List<int> seatIndexes = new List<int>();
         for (int i = 0; i < spawnPoints.Length; i++) seatIndexes.Add(i);
@@ -263,6 +272,7 @@ public class SetUpState : GameBaseState
                                         visualCtrl.SetDirection(false);
                                         // [FIX] AnimateFlip pakai parameter 'false' (Punggung)
                                         visualCtrl.AnimateFlip();
+                                        UpdateBuku(true);
 
 
                                     }
@@ -313,6 +323,7 @@ public class SetUpState : GameBaseState
             if (currentTimer <= 0)
             {
                 currentTimer = 0;
+                UpdateBuku(false);
                 Debug.Log("WAKTU HABIS!");
                 // Trigger Sequence Keluar (Time Up / Salah)
                 gamestate.StartCoroutine(ExitSequence(gamestate));
@@ -321,6 +332,7 @@ public class SetUpState : GameBaseState
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            UpdateBuku(false);
             Debug.Log("DEBUG: REM MENDADAK DI TEKAN!");
             //  targetdone = true;
             gamestate.StartCoroutine(EmergencyStopSequence(gamestate));
@@ -470,8 +482,10 @@ public class SetUpState : GameBaseState
     {
         if (data == null) return;
 
+
         // Ambil index bagian tubuh yang dicari dari Manager
         int targetPart = GameColorManager.Instance.currentRoundBodyPartIndex;
+
         if (data.celana != null)
             Debug.Log("TARGET CELANA ADALAH: " + data.celana.name + " | Sprite: " + data.celana.visual.name);
         // -----------------
@@ -525,6 +539,22 @@ public class SetUpState : GameBaseState
                 floorUI.text = $"{currentDisplayFloor} {arrow} {targetFloor}";
             }
         }
+    }
+
+    void UpdateBuku(bool asli)
+    {
+
+        if (asli)
+        {
+            bookOpenObj.SetActive(true);
+            bookClosedObj.SetActive(false);
+        }
+        else
+        {
+            bookOpenObj.SetActive(false);
+            bookClosedObj.SetActive(true);
+        }
+
     }
     NPCInstanceData ConvertStyleToInstance(NPCStyleData style)
     {
@@ -635,7 +665,7 @@ public class SetUpState : GameBaseState
 
 
                 }
-                npc.transform.rotation = Quaternion.identity; // Pastikan tegak
+                npc.transform.LookAt(playertransform); // Pastikan tegak
             }
         }
 
