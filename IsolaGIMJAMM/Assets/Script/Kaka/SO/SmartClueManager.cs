@@ -16,7 +16,6 @@ public class SmartClueManager : MonoBehaviour
         currentTarget = new NPCStyleData();
         currentTarget.rambut = GetRandom(database.hairs);
         currentTarget.baju = GetRandom(database.shirts);
-        currentTarget.kepala = GetRandom(database.heads);
         currentTarget.celana = GetRandom(database.pants);
         currentTarget.sepatu = GetRandom(database.shoes);
 
@@ -36,7 +35,6 @@ public class SmartClueManager : MonoBehaviour
 
             distraction.rambut = GetRandom(database.hairs);
             distraction.baju = GetRandom(database.shirts);
-            distraction.kepala = GetRandom(database.heads);
             distraction.celana = GetRandom(database.pants);
             distraction.sepatu = GetRandom(database.shoes);
 
@@ -52,7 +50,7 @@ public class SmartClueManager : MonoBehaviour
             // Cek Celana: Apakah harus disamakan?
             if (Random.value < similarityLevel) distraction.celana = currentTarget.celana;
             // Cek Celana: Apakah harus disamakan?
-            if (Random.value < similarityLevel) distraction.kepala = currentTarget.kepala;
+
             // Cek Celana: Apakah harus disamakan?
             if (Random.value < similarityLevel) distraction.sepatu = currentTarget.sepatu;
 

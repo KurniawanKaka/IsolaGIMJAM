@@ -17,6 +17,11 @@ public class PhotoMechanic : MonoBehaviour
     public GameObject viewfinderObj;
     public Image flashPanel;
 
+    [Header("Immersion (Shake & Bob)")]
+    public bool enableHeadBob = true;
+    public float bobFrequency = 2.0f;  // Kecepatan nafas
+    public float bobAmplitude = 0.005f; // Seberapa naik turun (kecil saja)
+
     [Header("Settings")]
     public float maxDistance = 100f; // Jarak maksimal foto
 
@@ -33,11 +38,16 @@ public class PhotoMechanic : MonoBehaviour
 
     [Header("External Sync")]
     [HideInInspector] public float yOffset = 0f;
-    [HideInInspector] public bool canAim = true;
+    public bool canAim = false;
 
     private bool isAiming;
     private bool inPhotoSequence = false; // Pengganti hasTakenPhoto agar bisa foto berkali-kali
     private Vector3 currentBasePos;
+    private float shakeStrength = 0f; // Kekuatan getaran saat ini (dikontrol LeanTween)
+    private Vector3 currentShakeOffset = Vector3.zero;
+    private float shakeTimer = 0f;
+    private float shakeMagnitude = 0f;
+    private Vector3 shakeOffset = Vector3.zero;
 
     void Start()
     {
@@ -58,7 +68,18 @@ public class PhotoMechanic : MonoBehaviour
     {
         // Jika sedang proses jepret, matikan input sementara
         if (inPhotoSequence) return;
-
+        // 1. UPDATE SHAKE TIMER
+        if (shakeTimer > 0)
+        {
+            // Buat getaran acak
+            shakeOffset = Random.insideUnitSphere * shakeMagnitude;
+            shakeOffset.z = 0; // Jangan getar maju mundur, pusing nanti
+            shakeTimer -= Time.deltaTime;
+        }
+        else
+        {
+            shakeOffset = Vector3.zero;
+        }
         // Logika Bidik
         if (canAim)
         {
@@ -70,24 +91,96 @@ public class PhotoMechanic : MonoBehaviour
             {
                 StartCoroutine(SequenceFoto());
             }
+
         }
         else
         {
-            // Jika dipaksa tidak boleh aim (misal lagi lihat buku), kembalikan posisi
             if (isAiming) RunAim(false);
         }
     }
 
     void LateUpdate()
     {
-        // Update posisi visual: Base Animasi + Offset Nunduk
-        transform.localPosition = currentBasePos + Vector3.up * yOffset;
+        // 1. HITUNG POSISI SHAKE
+        // Jika shakeStrength > 0, kita acak posisinya. Jika 0, offsetnya 0.
+        if (shakeStrength > 0.001f)
+        {
+            // Random.insideUnitSphere bikin getaran ke segala arah
+            Vector3 randomPoint = Random.insideUnitSphere * shakeStrength;
+            randomPoint.z = 0; // Kunci Z biar gak maju mundur (pusing)
+
+            // Gunakan Lerp agar pergerakan acaknya tidak terlalu kasar (Optional)
+            currentShakeOffset = Vector3.Lerp(currentShakeOffset, randomPoint, Time.deltaTime * 10f);
+        }
+        else
+        {
+            currentShakeOffset = Vector3.zero;
+        }
+
+        // 2. HITUNG BOBBING (NAFAS)
+        Vector3 bobOffset = Vector3.zero;
+        if (enableHeadBob && !isAiming)
+        {
+            bobOffset.y = Mathf.Sin(Time.time * bobFrequency) * bobAmplitude;
+        }
+
+        // 3. GABUNGKAN SEMUA POSISI
+        // currentBasePos (Aim/Idle) + yOffset (Nunduk) + Shake + Bobbing
+        Vector3 finalPos = currentBasePos + (Vector3.up * yOffset) + currentShakeOffset + bobOffset;
+
+        // Terapkan
+        transform.localPosition = finalPos;
     }
 
+
+    public void TriggerShake(float duration, float magnitude)
+    {
+        // Hentikan tween shake sebelumnya (jika ada) biar gak numpuk
+        LeanTween.cancel(gameObject);
+
+        // LOGIKA:
+        // Kita tidak menggerakkan objeknya, tapi kita menggerakkan nilai 'shakeStrength'
+        // Dari 0 -> Magnitude (Fade In) -> 0 (Fade Out)
+
+        // 1. Fade In (Masuk perlahan) - Durasi 10% dari total waktu
+        float fadeInTime = duration * 0.1f;
+        float fadeOutTime = duration * 0.9f;
+
+        // Tween Naik (0 ke Magnitude)
+        LeanTween.value(gameObject, 0f, magnitude, fadeInTime)
+            .setEaseOutQuad()
+            .setOnUpdate((float val) => { shakeStrength = val; })
+            .setOnComplete(() =>
+            {
+                // 2. Setelah Fade In selesai, langsung Fade Out (Magnitude ke 0)
+                LeanTween.value(gameObject, magnitude, 0f, fadeOutTime)
+                    .setEaseInQuad() // Ease In biar pas habisnya halus
+                    .setOnUpdate((float val) => { shakeStrength = val; });
+            });
+    }
+
+    // Opsi: Jika ingin getaran terus menerus (loop) untuk Lift yang sedang jalan lama
+    public void StartConstantShake(float magnitude)
+    {
+        LeanTween.cancel(gameObject);
+        // Fade in ke magnitude tertentu
+        LeanTween.value(gameObject, shakeStrength, magnitude, 0.5f)
+            .setOnUpdate((float val) => { shakeStrength = val; });
+    }
+
+    // Panggil ini saat Lift Berhenti
+    public void StopShake()
+    {
+        LeanTween.cancel(gameObject);
+        // Fade out ke 0
+        LeanTween.value(gameObject, shakeStrength, 0f, 0.5f)
+            .setOnUpdate((float val) => { shakeStrength = val; });
+    }
     public bool IsAiming() => isAiming;
 
     public void RunAim(bool enter)
     {
+        if (isAiming == enter) return;
         isAiming = enter;
         LeanTween.cancel(gameObject);
 
@@ -134,7 +227,7 @@ public class PhotoMechanic : MonoBehaviour
     IEnumerator SequenceFoto()
     {
         inPhotoSequence = true; // Kunci input
-
+        Time.timeScale = 0.1f;
         // Kunci pergerakan mouse kamera
         if (camController != null) camController.isLocked = true;
 
@@ -217,7 +310,12 @@ public class PhotoMechanic : MonoBehaviour
         else
         {
             Debug.Log("Meleset: Tidak mengenai apapun.");
-            Time.timeScale = 1f;
+
         }
     }
+    public void SetCanAim(bool state)
+    {
+        canAim = state;
+    }
+
 }

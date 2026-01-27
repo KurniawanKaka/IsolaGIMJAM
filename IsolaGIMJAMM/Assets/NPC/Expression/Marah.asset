@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c6240f5562f1b24e80b5b53230503fd, type: 3}
-  m_Name: Mohak
+  m_Name: Marah
   m_EditorClassIdentifier: 
-  idName: RambutMohawk
-  visual: {fileID: 21300000, guid: efbd40487d83aea4ba6f52539100d8ae, type: 3}
-  visualBack: {fileID: 21300000, guid: 4de2a0e183cedbf47b1f8f1415b6171b, type: 3}
+  idName: Marah
+  visual: {fileID: 21300000, guid: f219400c4d2810348999771f2fdca540, type: 3}
+  visualBack: {fileID: 21300000, guid: f219400c4d2810348999771f2fdca540, type: 3}

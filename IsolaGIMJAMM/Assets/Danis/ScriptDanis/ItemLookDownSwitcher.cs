@@ -17,12 +17,41 @@ public class ItemLookDownSwitcher : MonoBehaviour
     public float bookYVisible = 0.013f;
     public float camYOffsetMax = -0.21f;
 
+    public bool isFeatureUnlocked = false;
+
+
+
     private float currentRatio = 0f;
     private Coroutine transitionRoutine;
 
     void Start()
     {
 
+    }
+
+    public void UnlockCameraFeature()
+    {
+        Debug.Log("Switcher: Fitur Kamera Dibuka.");
+        isFeatureUnlocked = true;
+
+        // Cek posisi kepala sekarang, kalau lagi lurus (tidak nunduk), langsung nyalakan
+        OnAimReleased();
+    }
+
+    // 2. UNTUK MEMATIKAN KAMERA (Lock)
+    public void LockCameraFeature()
+    {
+        Debug.Log("Switcher: Fitur Kamera Dikunci.");
+        isFeatureUnlocked = false;
+
+        // Matikan paksa di PhotoMechanic
+        if (photoScript != null)
+        {
+            photoScript.SetCanAim(false);
+
+            // Jika sedang membidik, paksa turun
+            if (photoScript.IsAiming()) photoScript.RunAim(false);
+        }
     }
 
     // Dipanggil dari FPSCameraController
@@ -50,7 +79,11 @@ public class ItemLookDownSwitcher : MonoBehaviour
         while (!Mathf.Approximately(currentRatio, target))
         {
             // Jika tiba-tiba bidik pas transisi buku naik, batalkan!
-            if (photoScript.IsAiming()) target = 0f;
+            if (photoScript.IsAiming() && isFeatureUnlocked)
+            {
+                target = 0f;
+                photoScript.SetCanAim(true);
+            }
 
             currentRatio = Mathf.MoveTowards(currentRatio, target, Time.deltaTime * transitionSpeed);
 
@@ -60,11 +93,10 @@ public class ItemLookDownSwitcher : MonoBehaviour
             bookParent.localPosition = new Vector3(bookParent.localPosition.x, Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve), bookParent.localPosition.z);
             photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
 
-            // Sync canAim
-            if (currentRatio < 0.1f)
+            if (target == 0f && currentRatio < 0.1f)
             {
-
-                photoScript.canAim = true;
+                if (isFeatureUnlocked) photoScript.SetCanAim(true);
+                else photoScript.SetCanAim(false);
             }
 
             yield return null;

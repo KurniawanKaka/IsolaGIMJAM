@@ -4,7 +4,7 @@ public class NPCVisualControl : MonoBehaviour
 {
     [Header("Sprite Renderers")]
     public SpriteRenderer rambutRenderer;
-    public SpriteRenderer kepalaRenderer;
+    public SpriteRenderer ekspresiRenderer;
     public SpriteRenderer bajuRenderer;
     public SpriteRenderer celanaRenderer;
     public SpriteRenderer sepatuRenderer;
@@ -17,8 +17,58 @@ public class NPCVisualControl : MonoBehaviour
     {
         myData = data;
 
+        if (rambutRenderer != null)
+        {
+            if (data.rambutModel != null)
+                rambutRenderer.sprite = data.rambutModel.visual;
+            else
+                Debug.LogWarning($"NPC {gameObject.name}: Data Rambut Model KOSONG!");
+        }
+        else Debug.LogError($"NPC {gameObject.name}: Slot 'rambutRenderer' di Inspector BELUM DIISI!");
+
+        // Cek Baju
+        if (bajuRenderer != null)
+        {
+            if (data.bajuModel != null)
+                bajuRenderer.sprite = data.bajuModel.visual;
+            else
+                Debug.LogWarning($"NPC {gameObject.name}: Data Baju Model KOSONG!");
+        }
+        else Debug.LogError($"NPC {gameObject.name}: Slot 'bajuRenderer' di Inspector BELUM DIISI!");
+
+        // Cek Celana
+        if (celanaRenderer != null)
+        {
+            if (data.celanaModel != null)
+                celanaRenderer.sprite = data.celanaModel.visual;
+            else
+                Debug.LogWarning($"NPC {gameObject.name}: Data Celana Model KOSONG!");
+        }
+        else Debug.LogError($"NPC {gameObject.name}: Slot 'celanaRenderer' di Inspector BELUM DIISI!");
+
+        // Cek Sepatu
+        if (sepatuRenderer != null)
+        {
+            if (data.sepatuModel != null)
+                sepatuRenderer.sprite = data.sepatuModel.visual;
+            else
+                Debug.LogWarning($"NPC {gameObject.name}: Data Sepatu Model KOSONG!");
+        }
+        else Debug.LogError($"NPC {gameObject.name}: Slot 'sepatuRenderer' di Inspector BELUM DIISI!");
+
+        // Cek Kepala
+        if (ekspresiRenderer != null)
+        {
+            if (data.ekspresiModel != null)
+                ekspresiRenderer.sprite = data.ekspresiModel.visual;
+            else
+                Debug.LogWarning($"NPC {gameObject.name}: Data Ekspresi KOSONG!");
+        }
+        else Debug.LogError($"NPC {gameObject.name}: Slot 'Ekspresi' di Inspector BELUM DIISI!");
+
         // 1. Pasang Gambar (Model Putih)
         if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visual;
+        if (myData.ekspresiModel) ekspresiRenderer.sprite = myData.ekspresiModel.visual;
         if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visual;
         if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visual;
         if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visual;
@@ -138,7 +188,7 @@ public class NPCVisualControl : MonoBehaviour
         {
             // TAMPILAN DEPAN (Visual)
             if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visual;
-            if (myData.kepalaModel) kepalaRenderer.sprite = myData.kepalaModel.visual; // Tambah kepala
+            if (myData.ekspresiModel) ekspresiRenderer.sprite = myData.ekspresiModel.visual; // Tambah kepala
             if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visual;
             if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visual;
             if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visual;
@@ -147,7 +197,7 @@ public class NPCVisualControl : MonoBehaviour
         {
             // TAMPILAN BELAKANG (VisualBack)
             if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visualBack;
-            if (myData.kepalaModel) kepalaRenderer.sprite = myData.kepalaModel.visualBack; // Tambah kepala
+            if (myData.ekspresiModel) ekspresiRenderer.sprite = myData.ekspresiModel.visualBack; // Tambah kepala
             if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visualBack;
             if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visualBack;
             if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visualBack;
@@ -190,14 +240,21 @@ public class NPCVisualControl : MonoBehaviour
         //     .setEase(LeanTweenType.easeInOutSine)
         //     .setLoopPingPong();
     }
-
+    public void ChangeToSpecificExpression(NPCBodyPart targetSO)
+    {
+        ekspresiRenderer.sprite = targetSO.visual;
+    }
 }
+
+
+
+
 
 [System.Serializable]
 public class NPCInstanceData
 {
     // Model Fisik (Sprite Putih)
-    public NPCBodyPart kepalaModel;
+    public NPCBodyPart ekspresiModel;
     public NPCBodyPart rambutModel;
     public NPCBodyPart bajuModel;
     public NPCBodyPart celanaModel;

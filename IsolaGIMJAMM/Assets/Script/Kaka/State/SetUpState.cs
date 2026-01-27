@@ -10,10 +10,13 @@ public class SetUpState : GameBaseState
 {
 
     public Transform playertransform;
+    public ItemLookDownSwitcher pm;
 
     [Header("Book Visuals")]
     public GameObject bookOpenObj;   // Drag Objek 'Book_Visual_OPEN' kesini
     public GameObject bookClosedObj;
+
+    public NPCBodyPart ekspresiMarahSO;
 
 
     [Header("Databases")]
@@ -75,6 +78,7 @@ public class SetUpState : GameBaseState
     public override void EnterState(GameStateManager gamestate)
     {
         Debug.Log("--- MASUK SETUP: MEMULAI SEQUENCE ---");
+        pm.UnlockCameraFeature();
 
         // Mulai rangkaian animasi masuk sebagai Coroutine
         // Kita pinjam 'gamestate' (MonoBehaviour) untuk menjalankan Coroutine
@@ -297,6 +301,7 @@ public class SetUpState : GameBaseState
         yield return new WaitForSeconds(1.0f);
 
         // F. MULAI GAMEPLAY
+
         Debug.Log($"LIFT BERGERAK: {startFloor} menuju {targetFloor}");
         if (UI != null) UI.SetActive(true);
         isSequenceActive = false;
@@ -371,6 +376,7 @@ public class SetUpState : GameBaseState
             // Jika targetdone = true (Entah karena Spasi, Waktu Habis, atau Ketemu Target)
             // Langsung masuk sequence keluar
             gamestate.StartCoroutine(ExitSequence(gamestate));
+            //  pm.SetInputActive(false);
 
             // Reset flag biar gak dipanggil berkali-kali
             targetdone = false;
@@ -508,7 +514,7 @@ public class SetUpState : GameBaseState
         SetClueVisual(bajuu, data.baju?.visual, targetPart == 1); // Cek Baju
         SetClueVisual(celanaa, data.celana?.visual, targetPart == 2); // Cek Celana
         SetClueVisual(sepatuu, data.sepatu?.visual, targetPart == 3); // Cek Sepatu
-        SetClueVisual(kepalaa, data.kepala?.visual, false); // Kepala selalu putih (bukan clue)
+                                                                      // Kepala selalu putih (bukan clue)
     }
 
     void Shuffle<T>(List<T> list)
@@ -572,11 +578,12 @@ public class SetUpState : GameBaseState
         }
 
         // 2. Copy Model Fisik
+        newData.ekspresiModel = style.ekspresi;
         newData.rambutModel = style.rambut;
         newData.bajuModel = style.baju;
         newData.celanaModel = style.celana;
         newData.sepatuModel = style.sepatu;
-        newData.kepalaModel = style.kepala;
+
 
         // 3. Isi warna random dulu untuk semua (selain winning color)
         newData.rambutColorIndex = GetRandomDifferentColor(winningColorIndex);
@@ -614,10 +621,11 @@ public class SetUpState : GameBaseState
         {
             // Ambil model acak dari database
             newData.rambutModel = npcDatabase.GetRandomHair();
+            newData.ekspresiModel = npcDatabase.GetRandomEkspresi();
             newData.bajuModel = npcDatabase.GetRandomShirt();
             newData.celanaModel = npcDatabase.GetRandomPants();
             newData.sepatuModel = npcDatabase.GetRandomShoes();
-            newData.kepalaModel = npcDatabase.GetRandomHead();
+
         }
         else
         {
@@ -661,7 +669,7 @@ public class SetUpState : GameBaseState
 
 
                     visual.SetDirection(true); // Ganti sprite ke WAJAH (Depan)
-
+                    visual.ChangeToSpecificExpression(ekspresiMarahSO);
 
 
                 }

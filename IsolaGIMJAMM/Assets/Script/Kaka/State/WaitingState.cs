@@ -7,6 +7,10 @@ public class WaitingState : GameBaseState
 {
     [SerializeField] private float durasiAwal = 10;
     float timer;
+
+    public ItemLookDownSwitcher pm;
+    public PhotoMechanic cam;
+
     // public TextMeshProUGUI tek; // Panel Kiri
     //[SerializeField] public GameObject tekk;
 
@@ -14,9 +18,10 @@ public class WaitingState : GameBaseState
     {
         Debug.Log("masukk, tunggu waktu habis");
 
+        pm.LockCameraFeature();
         // 1. RESET TIMER (Penting! Agar kalau masuk state ini lagi, waktu ulang dari 10)
         timer = durasiAwal;
-
+        //   pm.SetInputActive(false);
 
 
         // tekk.SetActive(true);
@@ -24,17 +29,21 @@ public class WaitingState : GameBaseState
 
     public override void UpdateState(GameStateManager gamestate)
     {
-        timer -= Time.deltaTime;
+        ; timer -= Time.deltaTime;
 
         // Tampilkan angka bulat (F0) agar rapi
         //  tek.text = timer.ToString("F0");
 
         // PERBAIKAN DISINI: Gunakan Kurang Dari Sama Dengan (<=)
+
         if (timer <= 0)
         {
             // Pastikan timer berhenti di 0 secara visual
             timer = 0;
             // tek.text = "0";
+            // cam.TriggerShake(0.5f, 0.5f);
+            cam.StartConstantShake(0.05f);
+            Debug.Log("Triggercam");
 
             // Cek apakah gm ditemukan untuk menghindari crash
 
