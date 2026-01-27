@@ -4,9 +4,9 @@ using System.Collections;
 public class FPSCameraController : MonoBehaviour
 {
     [Header("Sensitivity & Limits")]
-    public float mouseSensitivity = 200f;
-    public float verticalLimit = 50f;
-    public float horizontalLimit = 60f;
+    public float mouseSensitivity;
+    public float verticalLimit = 50f;   // Batas nunduk (X)
+    public float horizontalLimit = 60f; // Batas nengok (Y)
     public bool isLocked = false;
 
     [Header("References")]
