@@ -1008,7 +1008,7 @@ MonoBehaviour:
   uiStressBar: {fileID: 1212319571}
   jumlahOrang: 8
   stressSaatIni: 0
-  maxStress: 100
+  maxStress: 10
   kenaikanPerOrang: 0.3
   kekuatanScroll: 25
   kecepatanVisualSmooth: 2

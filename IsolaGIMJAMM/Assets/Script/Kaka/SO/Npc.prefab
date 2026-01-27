@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 641039845211145977}
   - component: {fileID: 641039845211145982}
+  - component: {fileID: 8749022305583437197}
+  - component: {fileID: 8803766065278401005}
   m_Layer: 0
   m_Name: Rambut
   m_TagString: Untagged
@@ -30,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 641039845886651905}
-  m_RootOrder: 0
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &641039845211145982
 SpriteRenderer:
@@ -84,6 +86,33 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!65 &8749022305583437197
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 641039845211145976}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.91, y: 2.87, z: 0.2}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8803766065278401005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 641039845211145976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c5fc2769555694baec40f3c0ef8e9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bodyPartIndex: 0
+  parentNPC: {fileID: 2959118672383728976}
 --- !u!1 &641039845750862073
 GameObject:
   m_ObjectHideFlags: 0
@@ -114,7 +143,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 641039845886651905}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &641039845750862079
 SpriteRenderer:
@@ -200,9 +229,9 @@ Transform:
   m_LocalScale: {x: 0.18897119, y: 0.18897119, z: 0.18897119}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 641039845211145977}
   - {fileID: 641039845750862078}
   - {fileID: 929390968686386604}
+  - {fileID: 641039845211145977}
   - {fileID: 141118602959947601}
   - {fileID: 689736332510782446}
   - {fileID: 6378076717873866743}
@@ -226,6 +255,16 @@ MonoBehaviour:
   bajuRenderer: {fileID: 1718192892785146928}
   celanaRenderer: {fileID: 4921259729965311473}
   sepatuRenderer: {fileID: 7260640798092982614}
+  myData:
+    kepalaModel: {fileID: 0}
+    rambutModel: {fileID: 0}
+    bajuModel: {fileID: 0}
+    celanaModel: {fileID: 0}
+    sepatuModel: {fileID: 0}
+    rambutColorIndex: 0
+    bajuColorIndex: 0
+    celanaColorIndex: 0
+    sepatuColorIndex: 0
 --- !u!114 &8910848585452829201
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -298,7 +337,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 641039845886651905}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &2146122635547126097
 SpriteRenderer:
@@ -362,6 +401,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6378076717873866743}
   - component: {fileID: 7260640798092982614}
+  - component: {fileID: 3066812659223061009}
+  - component: {fileID: 6319525126893924461}
   m_Layer: 0
   m_Name: AlasKaki
   m_TagString: Untagged
@@ -436,6 +477,33 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!65 &3066812659223061009
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2229462978389821415}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.9099998, y: 0.90751576, z: 0.2}
+  m_Center: {x: 0, y: -0.33624178, z: 0}
+--- !u!114 &6319525126893924461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2229462978389821415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c5fc2769555694baec40f3c0ef8e9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bodyPartIndex: 3
+  parentNPC: {fileID: 2959118672383728976}
 --- !u!1 &4184031979460439929
 GameObject:
   m_ObjectHideFlags: 0
@@ -446,6 +514,8 @@ GameObject:
   m_Component:
   - component: {fileID: 141118602959947601}
   - component: {fileID: 1718192892785146928}
+  - component: {fileID: 6224837391180156807}
+  - component: {fileID: 7838439208448973952}
   m_Layer: 0
   m_Name: Baju
   m_TagString: Untagged
@@ -520,6 +590,33 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!65 &6224837391180156807
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4184031979460439929}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.9100003, y: 2.6256795, z: 0.19999999}
+  m_Center: {x: 0, y: -0.27716208, z: 0}
+--- !u!114 &7838439208448973952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4184031979460439929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c5fc2769555694baec40f3c0ef8e9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bodyPartIndex: 1
+  parentNPC: {fileID: 2959118672383728976}
 --- !u!1 &5734941927879760255
 GameObject:
   m_ObjectHideFlags: 0
@@ -530,6 +627,8 @@ GameObject:
   m_Component:
   - component: {fileID: 689736332510782446}
   - component: {fileID: 4921259729965311473}
+  - component: {fileID: 701082587264478594}
+  - component: {fileID: 6418124663576202729}
   m_Layer: 0
   m_Name: Celana
   m_TagString: Untagged
@@ -604,3 +703,30 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!65 &701082587264478594
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5734941927879760255}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.9100003, y: 2.457167, z: 0.19999999}
+  m_Center: {x: 0, y: -0.36141935, z: 0}
+--- !u!114 &6418124663576202729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5734941927879760255}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c5fc2769555694baec40f3c0ef8e9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bodyPartIndex: 2
+  parentNPC: {fileID: 2959118672383728976}

@@ -2,45 +2,155 @@ using UnityEngine;
 
 public class NPCVisualControl : MonoBehaviour
 {
-    [Header("Sprite Renderer References")]
+    [Header("Sprite Renderers")]
     public SpriteRenderer rambutRenderer;
     public SpriteRenderer kepalaRenderer;
     public SpriteRenderer bajuRenderer;
     public SpriteRenderer celanaRenderer;
     public SpriteRenderer sepatuRenderer;
 
-    private NPCStyleData currentData;
+    // Data probadi NPC ini
+    public NPCInstanceData myData;
 
-    public void SetupVisuals(NPCStyleData data)
+    // Fungsi ini dipanggil saat Spawn nanti
+    public void SetupVisuals(NPCInstanceData data)
     {
-        currentData = data;
-        // Default saat spawn: Hadap Depan (IsFront = true)
-        SetDirection(true);
+        myData = data;
+
+        // 1. Pasang Gambar (Model Putih)
+        if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visual;
+        if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visual;
+        if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visual;
+        if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visual;
+
+        // 2. Warnai!
+        RefreshColor();
+    }
+
+    // Fungsi untuk minta update warna ke Manager
+    public void RefreshColor()
+    {
+        if (myData == null || GameColorManager.Instance == null) return;
+
+        // Ambil info: Bagian tubuh mana yang sedang jadi Clue/Misteri ronde ini?
+        int mysteryPart = GameColorManager.Instance.currentRoundBodyPartIndex;
+        // 0=Rambut, 1=Baju, 2=Celana, 3=Sepatu
+
+        // --- HELPER LOKAL: TENTUKAN WARNA ---
+        // Logika: 
+        // 1. Jika bagian ini adalah MISTERI RONDE INI -> Paksa Abu-abu (Kecuali sudah diklik benar nanti)
+        // 2. Jika bukan -> Tampilkan warna normal (Sesuai status unlock)
+        Color DetermineColor(int myPartIndex, int myColorIndex)
+        {
+            // Jika ini adalah bagian tubuh yang sedang dicari (Clue)
+            if (myPartIndex == mysteryPart)
+            {
+                // Kita cek: Apakah warna INI barusan di-unlock di ronde ini?
+                // Kalau sudah unlocked, tampilkan. Kalau belum (walaupun unlocked di ronde sebelumnya),
+                // Kita bisa pilih untuk tetap menyembunyikannya atau menampilkannya.
+
+                // BERDASARKAN REQUEST KAMU: "Semua pakaian berwarna locked agar pemain tetap menganalisis"
+                // Jadi, kita cek apakah warna spesifik NPC ini sudah 'ketahuan' atau belum.
+                // Namun, agar susah, kita anggap visualnya "Locked" kecuali dia adalah target yang SUDAH ditemukan.
+
+                if (GameColorManager.Instance.palette[myColorIndex].isUnlocked)
+                {
+                    // TAPI tunggu, kalau kita tampilkan yang unlocked, pemain tetap bisa menebak sisa 1.
+                    // Jadi strateginya: 
+                    // Tampilkan WARNA ASLI hanya jika Pemain SUDAH MENANG ronde ini / atau menggunakan Lensa.
+                    // Tapi secara default, renderernya harus ABU-ABU.
+
+                    // Kita gunakan status standar dulu:
+                    return GameColorManager.Instance.GetColorStatus(myColorIndex);
+                }
+                else
+                {
+                    return GameColorManager.Instance.lockedColor; // Abu-abu
+                }
+            }
+            else
+            {
+                // Bagian tubuh lain (bukan clue) tampil normal apa adanya
+                return GameColorManager.Instance.GetColorStatus(myColorIndex);
+            }
+        }
+
+        // --- TAPI... ---
+        // Untuk memenuhi request "Semua Baju Abu-abu", kita harus memanipulasi logika GetColorStatus sedikit.
+        // Kita buat logika manual di sini:
+
+        void ApplyColor(SpriteRenderer renderer, int partIndex, int colorIndex)
+        {
+            if (renderer == null) return;
+
+            // APAKAH INI BAGIAN MISTERI?
+            if (partIndex == mysteryPart)
+            {
+                // Logika Hardcore: 
+                // Walaupun warnanya sudah Unlocked dari level sebelumnya, 
+                // untuk ronde ini kita paksa terlihat ABU-ABU agar pemain bingung.
+                // KECUALI: Warna tersebut adalah Target Ronde Ini DAN sudah ditemukan (Game Menang).
+
+                bool isTargetColor = (colorIndex == GameColorManager.Instance.currentRoundTargetColorIndex);
+                bool isActuallyUnlocked = GameColorManager.Instance.palette[colorIndex].isUnlocked;
+
+                // Jika ini warna target DAN sudah terbuka (artinya baru saja ditembak benar), Tampilkan.
+                if (isTargetColor && isActuallyUnlocked)
+                {
+                    renderer.color = GameColorManager.Instance.palette[colorIndex].actualColor;
+                }
+                else
+                {
+                    // Sisanya (Distraction maupun Target yang belum ketemu) -> ABU-ABU
+                    renderer.color = GameColorManager.Instance.lockedColor;
+                }
+            }
+            else
+            {
+                // Bagian tubuh lain tampil normal (Bisa warna-warni kalau sudah unlock)
+                renderer.color = GameColorManager.Instance.GetColorStatus(colorIndex);
+            }
+        }
+
+        // Terapkan ke semua renderer
+
+        ApplyColor(bajuRenderer, 1, myData.bajuColorIndex);
+        ApplyColor(celanaRenderer, 2, myData.celanaColorIndex);
+        ApplyColor(sepatuRenderer, 3, myData.sepatuColorIndex);
+    }
+
+    // Static Helper: Biar Manager bisa suruh semua NPC refresh barengan
+    public static void RefreshAllNPCs()
+    {
+        NPCVisualControl[] allNPCs = FindObjectsOfType<NPCVisualControl>();
+        foreach (var npc in allNPCs)
+        {
+            npc.RefreshColor();
+        }
     }
 
     // Saya tambahkan parameter bool agar bisa dipakai buat hadap depan lagi nanti saat keluar
     public void SetDirection(bool isFront)
     {
-        if (currentData == null) return;
+        if (myData == null) return;
 
         if (isFront)
         {
             // TAMPILAN DEPAN (Visual)
-            if (currentData.rambut) rambutRenderer.sprite = currentData.rambut.visual;
-            if (currentData.kepala) kepalaRenderer.sprite = currentData.kepala.visual;
-            if (currentData.baju) bajuRenderer.sprite = currentData.baju.visual;
-            if (currentData.celana) celanaRenderer.sprite = currentData.celana.visual;
-            if (currentData.sepatu) sepatuRenderer.sprite = currentData.sepatu.visual;
+            if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visual;
+            if (myData.kepalaModel) kepalaRenderer.sprite = myData.kepalaModel.visual; // Tambah kepala
+            if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visual;
+            if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visual;
+            if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visual;
         }
         else
         {
             // TAMPILAN BELAKANG (VisualBack)
-            // Pastikan di Scriptable Object "Visual Back" sudah diisi gambarnya
-            if (currentData.rambut && currentData.rambut.visualBack) rambutRenderer.sprite = currentData.rambut.visualBack;
-            if (currentData.kepala && currentData.kepala.visualBack) kepalaRenderer.sprite = currentData.kepala.visualBack;
-            if (currentData.baju && currentData.baju.visualBack) bajuRenderer.sprite = currentData.baju.visualBack;
-            if (currentData.celana && currentData.celana.visualBack) celanaRenderer.sprite = currentData.celana.visualBack;
-            if (currentData.sepatu && currentData.sepatu.visualBack) sepatuRenderer.sprite = currentData.sepatu.visualBack;
+            if (myData.rambutModel) rambutRenderer.sprite = myData.rambutModel.visualBack;
+            if (myData.kepalaModel) kepalaRenderer.sprite = myData.kepalaModel.visualBack; // Tambah kepala
+            if (myData.bajuModel) bajuRenderer.sprite = myData.bajuModel.visualBack;
+            if (myData.celanaModel) celanaRenderer.sprite = myData.celanaModel.visualBack;
+            if (myData.sepatuModel) sepatuRenderer.sprite = myData.sepatuModel.visualBack;
         }
     }
 
@@ -81,4 +191,21 @@ public class NPCVisualControl : MonoBehaviour
         //     .setLoopPingPong();
     }
 
+}
+
+[System.Serializable]
+public class NPCInstanceData
+{
+    // Model Fisik (Sprite Putih)
+    public NPCBodyPart kepalaModel;
+    public NPCBodyPart rambutModel;
+    public NPCBodyPart bajuModel;
+    public NPCBodyPart celanaModel;
+    public NPCBodyPart sepatuModel;
+
+    // Index Warna (0-9)
+    public int rambutColorIndex;
+    public int bajuColorIndex;
+    public int celanaColorIndex;
+    public int sepatuColorIndex;
 }
