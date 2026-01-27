@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class FPSCameraController : MonoBehaviour
 {
@@ -9,7 +10,8 @@ public class FPSCameraController : MonoBehaviour
     public bool isLocked = false;
 
     [Header("References")]
-    public Transform playerBody; // Drag objek 'npc1 (1)' ke sini
+    public Transform playerBody;
+    public ItemLookDownSwitcher switcher; // Hubungkan ke switcher
 
     private float xRotation = 0f;
     private float yRotation = 0f;
@@ -17,34 +19,33 @@ public class FPSCameraController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-
-        // Reset posisi kamera agar tepat di tengah poros badan saat mulai
-        transform.localPosition = new Vector3(0, transform.localPosition.y, 0);
+        StartCoroutine(CameraLoop());
     }
 
-    void Update()
+    IEnumerator CameraLoop()
     {
-        if (isLocked) return;
-
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-
-        // 1. Hitung rotasi
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -verticalLimit, verticalLimit);
-
-        yRotation += mouseX;
-        yRotation = Mathf.Clamp(yRotation, -horizontalLimit, horizontalLimit);
-
-        // 2. Terapkan rotasi ke kamera (Look Rotation)
-        // Kita gunakan rotasi relatif terhadap start (identity)
-        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-
-        // 3. Terapkan rotasi ke badan (Body Follow)
-        // Body hanya ikut rotasi Y agar kaki tetap sinkron di bawah mata
-        if (playerBody != null)
+        while (true) // Pengganti Update
         {
-            playerBody.localRotation = Quaternion.Euler(0f, yRotation, 0f);
+            if (!isLocked)
+            {
+                float mouseX = Input.GetAxisRaw("Mouse X") * mouseSensitivity * Time.deltaTime;
+                float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity * Time.deltaTime;
+
+                xRotation -= mouseY;
+                xRotation = Mathf.Clamp(xRotation, -verticalLimit, verticalLimit);
+
+                yRotation += mouseX;
+                yRotation = Mathf.Clamp(yRotation, -horizontalLimit, horizontalLimit);
+
+                transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+
+                if (playerBody != null)
+                    playerBody.localRotation = Quaternion.Euler(0f, yRotation, 0f);
+
+                // Kabari switcher kalau sudut berubah
+                switcher.CheckPitch(xRotation);
+            }
+            yield return null; // Tunggu ke frame berikutnya
         }
     }
 }
