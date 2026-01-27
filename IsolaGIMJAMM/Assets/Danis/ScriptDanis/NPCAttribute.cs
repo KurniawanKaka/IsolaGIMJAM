@@ -11,66 +11,81 @@ public class NPCAttribute : MonoBehaviour
 
     private int defaultLayer;
     private int colorLayer;
-    private SpriteRenderer sr; // Kita butuh ini buat nge-copy sprite ke Ghost
+    private SpriteRenderer sr;
 
     void Start()
     {
-        sr = GetComponent<SpriteRenderer>(); // Ambil komponen Sprite
+        sr = GetComponent<SpriteRenderer>();
+
+        // Simpan layer awal objek
         defaultLayer = gameObject.layer;
+
+        // Pastikan kamu sudah buat layer "ColoredReveal" di Unity
         colorLayer = LayerMask.NameToLayer("ColoredReveal");
+
+        // Cek jika layer tidak ditemukan
+        if (colorLayer == -1)
+        {
+            Debug.LogError($"Layer 'ColoredReveal' belum dibuat! Klik Edit > Project Settings > Tags and Layers.");
+        }
     }
 
     public void RevealColor()
     {
+        // Berhenti jika ada proses reveal yang sedang berjalan (biar gak numpuk)
         StopAllCoroutines();
         StartCoroutine(RevealProcess());
     }
 
     IEnumerator RevealProcess()
     {
-        // 1. Munculin Warna (Ganti Layer)
+        if (sr == null) yield break;
+
+        // 1. Munculin Warna (Ganti Layer ke ColoredReveal)
+        // Objek asli sekarang terlihat berwarna di kamera khusus
         gameObject.layer = colorLayer;
 
-        // 2. Tahan 1 Detik (Full Warna)
+        // 2. Tahan 1 Detik (Fase Full Warna)
         yield return new WaitForSeconds(1.0f);
 
         // --- MULAI PROSES FADE OUT ---
 
-        // A. Balikin aslinya ke B&W dulu (Layer Default)
-        // Visually: Di kamera utama dia sudah jadi hitam putih
+        // A. Balikin objek asli ke B&W (Layer Default)
         gameObject.layer = defaultLayer;
 
         // B. Bikin "Ghost" (Kloningan Sementara) yang Berwarna
-        // Tujuannya: Menutupi si Hitam Putih, lalu menghilang pelan-pelan
-        GameObject ghost = new GameObject("ColorGhost");
-        ghost.transform.SetParent(transform); // Tempel ke NPC biar kalau gerak ikut
+        GameObject ghost = new GameObject("ColorGhost_" + gameObject.name);
+        ghost.transform.SetParent(transform);
         ghost.transform.localPosition = Vector3.zero;
         ghost.transform.localRotation = Quaternion.identity;
         ghost.transform.localScale = Vector3.one;
-        ghost.layer = colorLayer; // Ghost ini yang berwarna (Overlay Camera)
+        ghost.layer = colorLayer;
 
         // C. Copy Tampilan Sprite ke Ghost
         SpriteRenderer ghostSr = ghost.AddComponent<SpriteRenderer>();
         ghostSr.sprite = sr.sprite;
-        ghostSr.color = sr.color; // Copy warna merah/kuning dari inspector
+        ghostSr.color = sr.color;
         ghostSr.flipX = sr.flipX;
         ghostSr.flipY = sr.flipY;
         ghostSr.sortingLayerID = sr.sortingLayerID;
-        ghostSr.sortingOrder = sr.sortingOrder; // Urutan sama ga masalah karena beda kamera
+        ghostSr.sortingOrder = sr.sortingOrder + 1; // Taruh sedikit di depan agar tidak flickering (Z-fight)
 
-        // D. Lakukan Animasi Fade Out pada Ghost
+        // D. Animasi Fade Out pada Ghost
         float t = 0;
         Color startColor = ghostSr.color;
 
         while (t < 1)
         {
             t += Time.deltaTime / fadeDuration;
+
             // Kurangi Alpha (Transparansi) pelan-pelan dari 1 ke 0
-            ghostSr.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0, t));
+            float alpha = Mathf.Lerp(startColor.a, 0, t);
+            ghostSr.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
+
             yield return null;
         }
 
-        // E. Hapus Ghost (Bersih-bersih)
+        // E. Hapus Ghost (Bersih-bersih memori)
         Destroy(ghost);
     }
 }
