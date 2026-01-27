@@ -5,19 +5,27 @@ public class GameColorManager : MonoBehaviour
 {
     public static GameColorManager Instance;
 
-    [Header("Palet Warna Global")]
-    public Color lockedColor = Color.gray; // Warna dunia saat belum ditemukan (Monokrom)
 
-    [Tooltip("Masukkan 10 warna game disini (Merah, Biru, Hijau, dll)")]
-    public List<ColorData> palette = new List<ColorData>();
+
+    // --- TAMBAHAN BARU ---
+    [Header("Runtime Data")]
+    public int currentRoundTargetColorIndex;
+
+    public int currentRoundBodyPartIndex;
+
+    [Header("Setting Warna Dunia")]
+    public Color lockedColor = new Color(0.3f, 0.3f, 0.3f, 1f); // Abu-abu gelap (Monokrom)
 
     [System.Serializable]
-    public class ColorData
+    public class ColorInfo
     {
-        public string name;      // Misal: "Merah Menyala"
-        public Color colorRGB;   // Warna Asli
-        public bool isUnlocked;  // Apakah sudah difoto player?
+        public string name;      // Misal: "Merah"
+        public Color actualColor; // Warna Aslinya (Pilih di Inspector)
+        public bool isUnlocked;   // Status: Sudah ketemu belum?
     }
+
+    // List 10 Warna kamu
+    public List<ColorInfo> palette = new List<ColorInfo>();
 
     void Awake()
     {
@@ -25,37 +33,79 @@ public class GameColorManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // Fungsi Utama: Minta Warna
-    // Jika Index 0 (Merah) sudah unlock -> Balikin Merah
-    // Jika belum -> Balikin Abu-abu (lockedColor)
-    public Color GetColorByIndex(int index)
+    // --- FUNGSI UTAMA YANG DIPANGGIL NPC ---
+    // NPC bertanya: "Saya punya Index Warna 0 (Merah), saya harus tampil warna apa?"
+    public Color GetColorStatus(int index)
     {
-        // Validasi agar tidak error jika index ngawur
-        if (index < 0 || index >= palette.Count) return lockedColor;
+        // Safety check biar gak error
+        if (index < 0 || index >= palette.Count) return Color.white;
 
+        // Cek Status
         if (palette[index].isUnlocked)
         {
-            return palette[index].colorRGB;
+            return palette[index].actualColor; // Kalau udah unlock, balikin Merah
         }
         else
         {
-            return lockedColor;
+            return lockedColor; // Kalau belum, balikin Abu-abu
         }
     }
 
-    // Fungsi saat Player berhasil memotret
+    // Fungsi Debug/Cheat untuk Unlock (Nanti dipanggil kamera)
     public void UnlockColor(int index)
     {
         if (index >= 0 && index < palette.Count)
         {
-            if (!palette[index].isUnlocked)
-            {
-                palette[index].isUnlocked = true;
-                Debug.Log($"WARNA DITEMUKAN: {palette[index].name}");
+            palette[index].isUnlocked = true;
+            Debug.Log($"Warna {palette[index].name} TERBUKA!");
 
-                // Refresh semua NPC agar yang pakai warna ini langsung berubah
-                // NPCVisualControl.RefreshAllNPCs();
+            // Refresh semua NPC biar langsung berubah visualnya
+            NPCVisualControl.RefreshAllNPCs();
+            // --- TAMBAHAN BARU: UPDATE UI ---
+            // Cari UI di scene dan suruh update
+            ColorControlUI ui = FindObjectOfType<ColorControlUI>();
+            if (ui != null) ui.UpdateDisplay();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // FUNGSI BARU: MENCARI WARNA YANG BELUM DITEMUKAN SAJA
+    // ------------------------------------------------------------------
+    public int GetRandomLockedColorIndex()
+    {
+        // 1. Buat daftar penampungan sementara
+        List<int> lockedIndices = new List<int>();
+
+        // 2. Cek satu per satu dari 10 warna
+        for (int i = 0; i < palette.Count; i++)
+        {
+            // Jika statusnya BELUM UNLOCKED (Masih False)
+            if (!palette[i].isUnlocked)
+            {
+                // Masukkan nomor indexnya ke daftar
+                lockedIndices.Add(i);
             }
         }
+
+        // 3. Cek apakah daftar kosong? (Artinya semua warna sudah ketemu/Tamat)
+        if (lockedIndices.Count == 0)
+        {
+            return -1; // Kode khusus yang artinya "GAME TAMAT / MENANG"
+        }
+
+        // 4. Pilih satu secara acak dari daftar yang tersisa
+        int randomIndex = UnityEngine.Random.Range(0, lockedIndices.Count);
+        return lockedIndices[randomIndex];
+    }
+
+    // Fungsi untuk mengecek sisa warna (Opsional, buat UI nanti)
+    public int GetRemainingColorsCount()
+    {
+        int count = 0;
+        foreach (var color in palette)
+        {
+            if (!color.isUnlocked) count++;
+        }
+        return count;
     }
 }
