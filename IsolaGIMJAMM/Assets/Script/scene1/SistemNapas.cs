@@ -102,21 +102,21 @@ public class SistemNapas : MonoBehaviour
 
         // A. EFEK GOYANG KAMERA (Pakai visualStressRatio)
         if (visualStressRatio > 0.01f)
-        {
-            seedX += speedGuncangan * Time.deltaTime;
-            seedY += speedGuncangan * Time.deltaTime;
+        //{
+        //    seedX += speedGuncangan * Time.deltaTime;
+        //    seedY += speedGuncangan * Time.deltaTime;
 
-            // Power goyangan juga di-lerp biar start-nya halus
-            float currentPower = Mathf.Lerp(0, powerGuncangan, visualStressRatio);
+        //    // Power goyangan juga di-lerp biar start-nya halus
+        //    float currentPower = Mathf.Lerp(0, powerGuncangan, visualStressRatio);
 
-            float x = (Mathf.PerlinNoise(seedX, 0) - 0.5f) * 2 * currentPower;
-            float y = (Mathf.PerlinNoise(0, seedY) - 0.5f) * 2 * currentPower;
-            kameraGoyang.localRotation = Quaternion.Euler(x, y, 0);
-        }
-        else
-        {
-            kameraGoyang.localRotation = Quaternion.identity;
-        }
+        //    float x = (Mathf.PerlinNoise(seedX, 0) - 0.5f) * 2 * currentPower;
+        //    float y = (Mathf.PerlinNoise(0, seedY) - 0.5f) * 2 * currentPower;
+        //    kameraGoyang.localRotation = Quaternion.Euler(x, y, 0);
+        //}
+        //else
+        //{
+        //    kameraGoyang.localRotation = Quaternion.identity;
+        //}
 
         // B. EFEK POST PROCESSING (Pakai visualStressRatio)
 
