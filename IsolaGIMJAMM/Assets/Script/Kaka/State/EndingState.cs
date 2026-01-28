@@ -17,4 +17,9 @@ public class EndingState : GameBaseState
     {
 
     }
+
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+    }
 }

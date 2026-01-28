@@ -9,4 +9,6 @@ public abstract class GameBaseState : MonoBehaviour
     public abstract void UpdateState(GameStateManager gamestate);
 
     public abstract void OnEnterState(GameStateManager gamestate);
+
+    public abstract void ExitState(GameStateManager gamestate);
 }

@@ -18,10 +18,13 @@ public class FPSCameraController : MonoBehaviour
     private float xRotation = 0f;
     private float yRotation = 0f;
 
+
+    public SistemNapas sistemNapas;
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        LockCursor();
 
         // Inisialisasi rotasi awal agar tidak snapping
         xRotation = transform.localEulerAngles.x;
@@ -39,7 +42,14 @@ public class FPSCameraController : MonoBehaviour
     // dan BERSAMAAN dengan script PhotoMechanic.
     void LateUpdate()
     {
+        if (sistemNapas != null && sistemNapas.isBlackout)
+        {
+            UnlockCursor(); // Munculkan kursor mouse untuk UI Game Over
+            return;         // Hentikan fungsi, jangan proses rotasi mouse
+        }
         if (isLocked) return;
+
+
 
         // 1. HAPUS Time.deltaTime
         // Input mouse sudah bersifat delta (perubahan posisi), tidak perlu dikali waktu.
@@ -70,5 +80,17 @@ public class FPSCameraController : MonoBehaviour
         {
             switcher.CheckPitch(xRotation);
         }
+    }
+
+    void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }

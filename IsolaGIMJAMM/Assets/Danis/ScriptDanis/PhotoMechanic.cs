@@ -1,9 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 
 public class PhotoMechanic : MonoBehaviour
 {
+
+    public static event Action OnCekrek;
+
     [Header("Game Managers")]
     public DebugGameManager gm; // Drag GameManager kesini untuk kurangi nyawa
 
@@ -72,7 +76,7 @@ public class PhotoMechanic : MonoBehaviour
         if (shakeTimer > 0)
         {
             // Buat getaran acak
-            shakeOffset = Random.insideUnitSphere * shakeMagnitude;
+            shakeOffset = UnityEngine.Random.insideUnitSphere * shakeMagnitude;
             shakeOffset.z = 0; // Jangan getar maju mundur, pusing nanti
             shakeTimer -= Time.deltaTime;
         }
@@ -106,7 +110,7 @@ public class PhotoMechanic : MonoBehaviour
         if (shakeStrength > 0.001f)
         {
             // Random.insideUnitSphere bikin getaran ke segala arah
-            Vector3 randomPoint = Random.insideUnitSphere * shakeStrength;
+            Vector3 randomPoint = UnityEngine.Random.insideUnitSphere * shakeStrength;
             randomPoint.z = 0; // Kunci Z biar gak maju mundur (pusing)
 
             // Gunakan Lerp agar pergerakan acaknya tidak terlalu kasar (Optional)
@@ -248,7 +252,10 @@ public class PhotoMechanic : MonoBehaviour
         // 3. Freeze Dramatis (Jeda sebentar setelah foto)
         yield return new WaitForSeconds(0.1f);
 
+
         Time.timeScale = 1f;
+        Debug.Log($"[SENDER] Saya PhotoMechanic dengan ID: {this.GetInstanceID()}. Mengirim Event sekarang.");
+        OnCekrek?.Invoke();
 
         // Buka kunci kamera
         if (camController != null) camController.isLocked = false;
@@ -256,7 +263,10 @@ public class PhotoMechanic : MonoBehaviour
         inPhotoSequence = false; // Buka input lagi (Bisa foto lagi)
 
         // Opsional: Jika ingin kamera turun otomatis setelah foto, uncomment baris ini:
+
         RunAim(false);
+        Debug.Log("PhotoMechanic: Cekrek! Event dikirim.");
+
     }
 
     // --- FUNGSI BARU: PENGGANTI LOGIKA LAMA ---

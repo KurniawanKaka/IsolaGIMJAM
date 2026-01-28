@@ -67,4 +67,8 @@ public class WaitingState : GameBaseState
     {
 
     }
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+    }
 }

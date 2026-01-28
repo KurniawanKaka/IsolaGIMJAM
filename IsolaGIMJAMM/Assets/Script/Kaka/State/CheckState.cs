@@ -19,4 +19,9 @@ public class CheckState : GameBaseState
 
     }
 
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+    }
+
 }

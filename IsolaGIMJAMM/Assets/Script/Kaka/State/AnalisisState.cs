@@ -17,4 +17,8 @@ public class AnalisisState : GameBaseState
     {
 
     }
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+    }
 }

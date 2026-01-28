@@ -12,6 +12,8 @@ public class SetUpState : GameBaseState
     public Transform playertransform;
     public ItemLookDownSwitcher pm;
 
+    public PhotoMechanic cam;
+
     [Header("Book Visuals")]
     public GameObject bookOpenObj;   // Drag Objek 'Book_Visual_OPEN' kesini
     public GameObject bookClosedObj;
@@ -65,9 +67,14 @@ public class SetUpState : GameBaseState
     // --- LOGIC FLAGS ---
     public bool targetdone = false;      // Ditandai TRUE jika pemain memilih BENAR/SALAH (Logika klik diatur PlayerCamera)
     private bool isSequenceActive = false; // Pengunci agar Update tidak jalan saat animasi pintu/jalan
+    private bool hasTriggeredStop = false;
+
+    private GameStateManager cachedGameState;
 
     // List untuk melacak NPC yang hidup agar bisa disuruh keluar nanti
     private List<GameObject> currentNPCs = new List<GameObject>();
+
+
 
 
     #region EnterState
@@ -78,11 +85,17 @@ public class SetUpState : GameBaseState
     public override void EnterState(GameStateManager gamestate)
     {
         Debug.Log("--- MASUK SETUP: MEMULAI SEQUENCE ---");
-        pm.UnlockCameraFeature();
-
-        // Mulai rangkaian animasi masuk sebagai Coroutine
-        // Kita pinjam 'gamestate' (MonoBehaviour) untuk menjalankan Coroutine
+        cachedGameState = gamestate; // Simpan referensi
+                                     // [FIX 1] Cek 'cam' langsung, bukan 'pm'
+        hasTriggeredStop = false; // Reset flag stop biar bisa foto lagi ronde depan
+        if (cam != null)
+        {
+            Debug.Log($"[LISTENER] Saya SetUpState. Saya akan subscribe ke PhotoMechanic dengan ID: {cam.GetInstanceID()}");
+            PhotoMechanic.OnCekrek += HandleCekrek;
+        }
+        // Mulai rangkaian animasi masuk
         gamestate.StartCoroutine(EntrySequence(gamestate));
+
     }
     #endregion
 
@@ -298,9 +311,11 @@ public class SetUpState : GameBaseState
 
         // E. TUTUP PINTU
         if (doorController != null) doorController.CloseDoors();
+        pm.UnlockCameraFeature();
         yield return new WaitForSeconds(1.0f);
 
         // F. MULAI GAMEPLAY
+
 
         Debug.Log($"LIFT BERGERAK: {startFloor} menuju {targetFloor}");
         if (UI != null) UI.SetActive(true);
@@ -335,13 +350,7 @@ public class SetUpState : GameBaseState
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            UpdateBuku(false);
-            Debug.Log("DEBUG: REM MENDADAK DI TEKAN!");
-            //  targetdone = true;
-            gamestate.StartCoroutine(EmergencyStopSequence(gamestate));
-        }
+
 
         if (!targetdone)
         {
@@ -391,6 +400,7 @@ public class SetUpState : GameBaseState
     // ---------------------------------------------------------
     IEnumerator ExitSequence(GameStateManager gamestate)
     {
+        pm.LockCameraFeature();
         isSequenceActive = true; // Kunci lagi
         if (UI != null) UI.SetActive(false); // Sembunyikan UI Misi
         UpdateFloorUI(true);
@@ -505,7 +515,7 @@ public class SetUpState : GameBaseState
                 img.sprite = sprite;
                 img.gameObject.SetActive(true);
                 // Jika ini target -> HITAM, Jika bukan -> PUTIH
-                img.color = isTargetPart ? Color.black : Color.white;
+                img.color = isTargetPart ? Color.gray : Color.white;
             }
             else if (img != null) img.gameObject.SetActive(false);
         }
@@ -640,6 +650,17 @@ public class SetUpState : GameBaseState
 
         return newData;
     }
+
+    public void OnPhotoDone(GameStateManager gamestate)
+    {
+        if (hasTriggeredStop) return; // Cegah double call
+        hasTriggeredStop = true;
+
+        Debug.Log("SetupState: Menerima laporan foto selesai. Menjalankan Sequence...");
+
+        // Jalankan logika Emergency Stop / Pindah State
+        gamestate.StartCoroutine(EmergencyStopSequence(gamestate));
+    }
     #endregion
 
     #region StopSequence
@@ -648,7 +669,7 @@ public class SetUpState : GameBaseState
     IEnumerator EmergencyStopSequence(GameStateManager gamestate)
     {
         // 1. Matikan UI & Logic Update
-
+        pm.LockCameraFeature();
         // 1. Matikan UI & Logic Update
         isSequenceActive = true;
         if (UI != null) UI.SetActive(false);
@@ -706,9 +727,27 @@ public class SetUpState : GameBaseState
         yield return gamestate.StartCoroutine(ExitSequence(gamestate));
 
     }
+    private void HandleCekrek()
+    {
+        Debug.Log("SetUpState: Menerima sinyal Cekrek!");
 
+        cachedGameState.StartCoroutine(EmergencyStopSequence(cachedGameState));
+
+    }
     // FUNGSI HELPER: Ubah Clue jadi Data Warna
     #endregion
 
     public override void OnEnterState(GameStateManager gamestate) { }
+
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+        // [FIX 2] Unsubscribe dari 'cam', cek 'cam' bukan 'pm'
+        if (cam != null)
+        {
+            PhotoMechanic.OnCekrek -= HandleCekrek;
+        }
+
+        cachedGameState = null;
+    }
 }

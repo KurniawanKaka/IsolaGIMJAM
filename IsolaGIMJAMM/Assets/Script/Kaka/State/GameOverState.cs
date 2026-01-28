@@ -20,4 +20,12 @@ public class GameOverState : GameBaseState
     {
 
     }
+
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+    }
+
+
+
 }
