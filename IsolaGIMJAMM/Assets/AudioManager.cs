@@ -3,44 +3,93 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     [Header("======= Audio Source =======")]
-    [SerializeField] AudioSource musicSource;
-    [SerializeField] AudioSource SFXSource;
+    [SerializeField] AudioSource musicSource; // Untuk BGM & Ambiance
+    [SerializeField] AudioSource SFXSource;   // Untuk SFX
 
-    [Header("======= Music Clip =======")]
-    public AudioClip Background;
+    [Header("======= Music (BGM & Ambiance) =======")]
+    public AudioClip Epilog;
+    public AudioClip Lift;
+    public AudioClip Mainmenu;
+    public AudioClip Prolog;
+    public AudioClip Ambiance1;
+    public AudioClip Ambiance2;
+    public AudioClip Ambiance3;
+    public AudioClip Ambiance4;
+    public AudioClip Ambiance5;
 
-    [Header("======= SFX Lists =======")]
-    public AudioClip[] LiftSfx;       // Untuk Button 1
-    public AudioClip[] SecondSfxList;  // Untuk Button 2
+    [Header("======= SFX (Environment) =======")]
+    public AudioClip Liftbukatutup;
+    public AudioClip Liftbell;
+    public AudioClip Shutter;
+
+    [Header("======= SFX (Player) =======")]
+    public AudioClip Nafasmin;
+    public AudioClip Nafasmid;
+    public AudioClip Nafasmax;
+
+    [Header("======= SFX (Npc) =======")]
+    public AudioClip NpcBatuk;
+    public AudioClip NpcBersin;
+    public AudioClip NpcGaruk;
+    public AudioClip NpcHmm;
+    public AudioClip NpcHitut;
+    public AudioClip NpcLapar;
+    public AudioClip NpcKetawa;
+    public AudioClip NpcBukaMakanan;
+    public AudioClip NpcMakan;
+    public AudioClip NpcNgantuk;
+
+    [Header("======= SFX (Randomized Variants) =======")]
+    public AudioClip[] LiftgerakSfx;
+    public AudioClip[] ButtonSfx;
+    public AudioClip[] HimbauanSfx;
+    public AudioClip[] LifttingtungSfx;
+    public AudioClip[] Whoosh;
+
+    // ==========================================================
+    // LOGIKA TAMBAHAN (RANDOMISASI)
+    // ==========================================================
 
     private void Start()
     {
-        if (Background != null && musicSource != null)
-        {
-            musicSource.clip = Background;
-            musicSource.Play();
-        }
+        // Contoh memutar Main Menu saat start
+        PlayMusic(Mainmenu);
     }
 
-    // Fungsi untuk Button 1
-    public void PlayRandomLiftSFX()
+    // Fungsi Dasar Memutar Music (Looping)
+    public void PlayMusic(AudioClip clip)
     {
-        ExecuteRandomSFX(LiftSfx);
+        if (clip == null) return;
+        musicSource.clip = clip;
+        musicSource.loop = true;
+        musicSource.Play();
     }
 
-    // Fungsi untuk Button 2
-    public void PlayRandomSecondSFX()
+    // Fungsi Dasar Memutar SFX Tunggal
+    public void PlaySFX(AudioClip clip)
     {
-        ExecuteRandomSFX(SecondSfxList);
+        if (clip != null) SFXSource.PlayOneShot(clip);
     }
 
-    // Logika internal (Ducking otomatis aktif karena lewat SFXSource)
-    private void ExecuteRandomSFX(AudioClip[] clips)
+    // --- FUNGSI RANDOMISASI UNTUK VARIANT ---
+
+    public void PlayRandomLiftGerak() => PlayRandomFromList(LiftgerakSfx);
+    public void PlayRandomButton() => PlayRandomFromList(ButtonSfx);
+    public void PlayRandomHimbauan() => PlayRandomFromList(HimbauanSfx);
+    public void PlayRandomTingTung() => PlayRandomFromList(LifttingtungSfx);
+    public void PlayRandomWhoosh() => PlayRandomFromList(Whoosh);
+
+    // Fungsi Reusable (Hanya bisa diakses di dalam script ini)
+    private void PlayRandomFromList(AudioClip[] clips)
     {
-        if (clips != null && clips.Length > 0 && SFXSource != null)
+        if (clips != null && clips.Length > 0)
         {
             int randomIndex = Random.Range(0, clips.Length);
             SFXSource.PlayOneShot(clips[randomIndex]);
+        }
+        else
+        {
+            Debug.LogWarning("Daftar SFX Random masih kosong di Inspector!");
         }
     }
 }
