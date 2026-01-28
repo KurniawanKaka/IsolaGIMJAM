@@ -21,6 +21,9 @@ public class AudioManager : MonoBehaviour
     public AudioClip Liftbukatutup;
     public AudioClip Liftbell;
     public AudioClip Shutter;
+    public AudioClip PintuBuka;
+    public AudioClip PintuDikit;
+    public AudioClip PintuTutup;
 
     [Header("======= SFX (Player) =======")]
     public AudioClip Nafasmin;

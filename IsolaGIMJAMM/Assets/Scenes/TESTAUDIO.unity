@@ -927,6 +927,9 @@ MonoBehaviour:
   Liftbukatutup: {fileID: 8300000, guid: 2e35b2630ba6cb547b2e2b54deabfa92, type: 3}
   Liftbell: {fileID: 8300000, guid: c2032907d93d9d44095218c93b78e3e4, type: 3}
   Shutter: {fileID: 8300000, guid: d5e5f6dc13d613d4bb9141b46cca76a8, type: 3}
+  PintuBuka: {fileID: 8300000, guid: 44b15a0d52fa3d24d9ef97d365e31e60, type: 3}
+  PintuDikit: {fileID: 8300000, guid: 39272510dab617546911840b1b82901a, type: 3}
+  PintuTutup: {fileID: 8300000, guid: 1bbe233909a21be47a85a7331297eafd, type: 3}
   Nafasmin: {fileID: 8300000, guid: 199969bcd592f1c4998578acdd26cd54, type: 3}
   Nafasmid: {fileID: 8300000, guid: 5c4e1e576d4fa2c4aa49498eeedec51d, type: 3}
   Nafasmax: {fileID: 8300000, guid: bd01f7635dbdfa3499d289129c8789d9, type: 3}
