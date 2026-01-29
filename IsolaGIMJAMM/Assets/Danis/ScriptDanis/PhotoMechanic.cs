@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System;
+using UnityEngine.Rendering;
 
 public class PhotoMechanic : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class PhotoMechanic : MonoBehaviour
     public Camera fpsCam;       // Kamera Utama
     public Camera overlayCam;   // Kamera UI/Overlay (Opsional)
     public FPSCameraController camController;
+
+    public AudioManager am;
 
     [Header("Visuals")]
     public ObjectSway swayScript;
@@ -93,6 +96,7 @@ public class PhotoMechanic : MonoBehaviour
             // Input Motret (Klik Kiri): Hanya jika sedang bidik
             if (isAiming && Input.GetMouseButtonDown(0))
             {
+                am.PlaySFX(am.shutter);
                 StartCoroutine(SequenceFoto());
             }
 
@@ -230,6 +234,7 @@ public class PhotoMechanic : MonoBehaviour
     // --- LOGIKA UTAMA JEPRET ---
     IEnumerator SequenceFoto()
     {
+
         inPhotoSequence = true; // Kunci input
         Time.timeScale = 0.1f;
         // Kunci pergerakan mouse kamera

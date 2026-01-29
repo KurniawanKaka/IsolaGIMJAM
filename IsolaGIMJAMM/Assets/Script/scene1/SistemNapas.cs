@@ -2,10 +2,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.Events; // Tambahan untuk Event
+using UnityEngine.Events;
+using System.Data.Common; // Tambahan untuk Event
 
 public class SistemNapas : MonoBehaviour
 {
+
+    public AudioManager am;
     [Header("Referensi Utama")]
     public Transform kameraGoyang; // Pasang Main Camera disini
     public Volume postProcessVolume;
@@ -38,6 +41,8 @@ public class SistemNapas : MonoBehaviour
     private Vignette vignetteEffect;
     private ChromaticAberration chromaticEffect;
     private ColorAdjustments colorEffect;
+
+    private AudioClip currentNafasClip;
 
     void Start()
     {
@@ -77,12 +82,24 @@ public class SistemNapas : MonoBehaviour
         // Update UI Slider
         if (uiStressBar != null) uiStressBar.value = stressSaatIni;
 
+        // if (maxStress > maxStress / 3)
+        // {
+        //     am.PlaySFX(am.Nafasmin);
+        // }
+        // if (maxStress > maxStress / 3)
+        // {
+        //     am.PlaySFX(am.Nafasmin);
+        // }
+        // if (maxStress > maxStress / 3)
+        // {
+        //     am.PlaySFX(am.Nafasmin);
+        // }
         // CEK KONDISI GAMEOVER / BLACKOUT
         if (stressSaatIni >= maxStress)
         {
             TriggerBlackout();
         }
-
+        HandleAudioNafas();
         // 2. APLIKASIKAN EFEK VISUAL
         ApplySmoothedVisuals();
     }
@@ -91,6 +108,11 @@ public class SistemNapas : MonoBehaviour
     {
         isBlackout = true;
         Debug.Log("PEMAIN BLACKOUT! GAMEOVER.");
+
+        if (am != null && currentNafasClip != null)
+        {
+            am.StopLoopingSFX(currentNafasClip);
+        }
 
         // Munculkan UI Game Over
         if (uiGameOver != null) uiGameOver.SetActive(true);
@@ -145,6 +167,49 @@ public class SistemNapas : MonoBehaviour
 
             // Terapkan ke Post Exposure
             colorEffect.postExposure.value = Mathf.Lerp(colorEffect.postExposure.value, targetExposure, Time.deltaTime * 5f);
+        }
+    }
+
+    void HandleAudioNafas()
+    {
+        if (am == null) return;
+
+        // 1. Hitung Persentase Stress (0.0 sampai 1.0)
+        float ratio = stressSaatIni / maxStress;
+
+        // 2. Tentukan Target Audio berdasarkan Persentase
+        AudioClip targetClip = null;
+
+        if (ratio <= 0.3f) // Di bawah 30% (Aman)
+        {
+            targetClip = am.Nafasmin;
+        }
+        else if (ratio <= 0.6f) // 30% - 60% (Menengah)
+        {
+            targetClip = am.Nafasmid;
+        }
+        else // Di atas 60% (Panik)
+        {
+            targetClip = am.Nafasmax;
+        }
+
+        // 3. LOGIKA GANTI SUARA (PENTING!)
+        // Kita hanya menyuruh AudioManager kerja JIKA target audionya berubah.
+        // Contoh: Dari 'NafasMin' berubah jadi 'NafasMid'.
+
+        if (currentNafasClip != targetClip)
+        {
+            // Matikan suara yang lama (jika ada)
+            if (currentNafasClip != null)
+            {
+                am.StopLoopingSFX(currentNafasClip);
+            }
+
+            // Mainkan suara yang baru (Looping)
+            am.PlayLoopingSFX(targetClip);
+
+            // Simpan status sekarang
+            currentNafasClip = targetClip;
         }
     }
 }

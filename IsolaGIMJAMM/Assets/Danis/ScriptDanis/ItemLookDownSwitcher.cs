@@ -7,6 +7,8 @@ public class ItemLookDownSwitcher : MonoBehaviour
     public PhotoMechanic photoScript;
     public Transform bookParent;
 
+    public AudioManager am;
+
 
     [Header("Settings")]
     public float thresholdAngle = 47f;
@@ -35,7 +37,7 @@ public class ItemLookDownSwitcher : MonoBehaviour
         isFeatureUnlocked = true;
 
         // Cek posisi kepala sekarang, kalau lagi lurus (tidak nunduk), langsung nyalakan
-        OnAimReleased();
+        //  OnAimReleased();
     }
 
     // 2. UNTUK MEMATIKAN KAMERA (Lock)
@@ -76,12 +78,14 @@ public class ItemLookDownSwitcher : MonoBehaviour
 
     IEnumerator SmoothTransition(float target)
     {
+        am.PlayRandomFromList(am.Whoosh);
         while (!Mathf.Approximately(currentRatio, target))
         {
+            //  am.PlayRandomLoopingSFX(am.Whoosh);
             // Jika tiba-tiba bidik pas transisi buku naik, batalkan!
             if (photoScript.IsAiming() && isFeatureUnlocked)
             {
-                target = 0f;
+                //target = 0f;
                 photoScript.SetCanAim(true);
             }
 
@@ -93,7 +97,7 @@ public class ItemLookDownSwitcher : MonoBehaviour
             bookParent.localPosition = new Vector3(bookParent.localPosition.x, Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve), bookParent.localPosition.z);
             photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
 
-            if (target == 0f && currentRatio < 0.1f)
+            if (currentRatio < 0.1f)
             {
                 if (isFeatureUnlocked) photoScript.SetCanAim(true);
                 else photoScript.SetCanAim(false);

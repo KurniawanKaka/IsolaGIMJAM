@@ -9,7 +9,7 @@ public class GameStateManager : MonoBehaviour
     GameBaseState currentState;
     public AnalisisState analisisstate = new AnalisisState();
     public CheckState checkstate = new CheckState();
-    public GameOverState gameoverstate = new GameOverState();
+    public GameOverPolisiState gameoverstate = new GameOverPolisiState();
     public SetUpState setupstate = new SetUpState();
 
     public EndingState endingstate = new EndingState();
@@ -17,7 +17,7 @@ public class GameStateManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentState = waitingstate;
+        currentState = gameoverstate;
 
         currentState.EnterState(this);
     }

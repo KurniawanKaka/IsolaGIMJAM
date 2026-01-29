@@ -42,8 +42,7 @@ public class WaitingState : GameBaseState
             timer = 0;
             // tek.text = "0";
             // cam.TriggerShake(0.5f, 0.5f);
-            cam.StartConstantShake(0.05f);
-            Debug.Log("Triggercam");
+
 
             // Cek apakah gm ditemukan untuk menghindari crash
 
