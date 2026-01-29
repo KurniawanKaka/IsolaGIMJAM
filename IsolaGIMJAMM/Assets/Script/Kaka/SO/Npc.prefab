@@ -270,8 +270,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
 <<<<<<< Updated upstream:IsolaGIMJAMM/Assets/Script/Kaka/SO/Npc.prefab
+<<<<<<< Updated upstream:IsolaGIMJAMM/Assets/Script/Kaka/SO/Npc.prefab
 --- !u!1 &2102690091835010700
 GameObject:
+=======
+--- !u!114 &-956550790275308291
+MonoBehaviour:
+>>>>>>> Stashed changes:IsolaGIMJAMM/Assets/NPC/Npc.prefab
 =======
 --- !u!114 &-956550790275308291
 MonoBehaviour:
@@ -280,6 +285,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
+<<<<<<< Updated upstream:IsolaGIMJAMM/Assets/Script/Kaka/SO/Npc.prefab
 <<<<<<< Updated upstream:IsolaGIMJAMM/Assets/Script/Kaka/SO/Npc.prefab
   serializedVersion: 6
   m_Component:
@@ -360,6 +366,8 @@ SpriteRenderer:
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 =======
+=======
+>>>>>>> Stashed changes:IsolaGIMJAMM/Assets/NPC/Npc.prefab
   m_GameObject: {fileID: 641039845886651904}
   m_Enabled: 1
   m_EditorHideFlags: 0
@@ -384,6 +392,9 @@ SpriteRenderer:
   m_LocalBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 2.645906, y: 2.645906, z: 0}
+<<<<<<< Updated upstream:IsolaGIMJAMM/Assets/Script/Kaka/SO/Npc.prefab
+>>>>>>> Stashed changes:IsolaGIMJAMM/Assets/NPC/Npc.prefab
+=======
 >>>>>>> Stashed changes:IsolaGIMJAMM/Assets/NPC/Npc.prefab
 --- !u!1 &2229462978389821415
 GameObject:
