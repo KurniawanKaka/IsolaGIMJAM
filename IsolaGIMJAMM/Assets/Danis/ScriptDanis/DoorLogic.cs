@@ -6,10 +6,13 @@ using System.Collections;
 
 public class DoorLogic : MonoBehaviour
 {
+    [Header("Visual Target")]
+    public GameObject doorVisual; // SERET OBJEK PINTU (YANG MUTER) KE SINI
+
     [Header("Scene Settings")]
     public string nextScene;
     public float animDuration = 1.0f;
-    public float fadeDuration = 1.5f; // Sedikit dicepetin biar nggak dragging
+    public float fadeDuration = 1.5f;
 
     [Header("Camera Move")]
     public CinemachineVirtualCamera vCam;
@@ -24,7 +27,10 @@ public class DoorLogic : MonoBehaviour
 
     void Start()
     {
-        initialRotation = transform.localEulerAngles;
+        // Ambil rotasi awal dari visualnya, bukan dari trigger
+        if (doorVisual != null)
+            initialRotation = doorVisual.transform.localEulerAngles;
+
         if (fadeImage != null)
         {
             fadeImage.color = new Color(0, 0, 0, 0);
@@ -34,16 +40,18 @@ public class DoorLogic : MonoBehaviour
 
     void OnMouseEnter()
     {
-        if (isZooming) return;
-        LeanTween.cancel(gameObject);
-        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -30f), 0.3f).setEaseOutBack();
+        // Animasi diarahkan ke doorVisual
+        if (isZooming || doorVisual == null) return;
+        LeanTween.cancel(doorVisual);
+        LeanTween.rotateLocal(doorVisual, new Vector3(-90f, 0, -40f), 0.3f).setEaseOutBack();
     }
 
     void OnMouseExit()
     {
-        if (isZooming) return;
-        LeanTween.cancel(gameObject);
-        LeanTween.rotateLocal(gameObject, initialRotation, 0.3f).setEaseOutQuad();
+        // Kembalikan rotasi doorVisual
+        if (isZooming || doorVisual == null) return;
+        LeanTween.cancel(doorVisual);
+        LeanTween.rotateLocal(doorVisual, initialRotation, 0.3f).setEaseOutQuad();
     }
 
     void OnMouseDown()
@@ -56,12 +64,14 @@ public class DoorLogic : MonoBehaviour
     {
         isZooming = true;
 
-        // 1. Pintu Terbuka (Pake Expo biar bukanya "kick" di awal)
-        LeanTween.cancel(gameObject);
-        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -75f), animDuration).setEaseInOutExpo();
+        if (doorVisual != null)
+        {
+            LeanTween.cancel(doorVisual);
+            // Pintu terbuka penuh (Visualnya saja yang bergerak)
+            LeanTween.rotateLocal(doorVisual, new Vector3(-90f, 0, -75f), 1.5f).setEaseInOutExpo();
+        }
 
-        // 2. Kamera Maju & Fade (Pake EaseInExpo biar makin deket pintu makin kenceng)
-        // Ini kuncinya biar nggak linear, bjir!
+        // Gerakan Kamera
         LeanTween.value(gameObject, startZ, targetZ, fadeDuration)
             .setEaseInExpo()
             .setOnUpdate((float val) => {
@@ -70,9 +80,9 @@ public class DoorLogic : MonoBehaviour
                 vCam.transform.localPosition = currentPos;
             });
 
+        // UI Fade
         if (fadeImage != null)
         {
-            // Fadenya juga ikut dipercepat di akhir biar sinkron sama gerakan kamera
             LeanTween.value(fadeImage.gameObject, 0f, 1f, fadeDuration)
                 .setEaseInQuart()
                 .setOnUpdate((float alpha) => {
