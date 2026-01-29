@@ -8,6 +8,21 @@ using UnityEngine.UI;
 
 public class SetUpState : GameBaseState
 {
+    public AudioManager am;
+
+
+
+    public Transform playertransform;
+    public ItemLookDownSwitcher pm;
+
+    public PhotoMechanic cam;
+
+    [Header("Book Visuals")]
+    public GameObject bookOpenObj;   // Drag Objek 'Book_Visual_OPEN' kesini
+    public GameObject bookClosedObj;
+
+    public NPCBodyPart ekspresiMarahSO;
+
 
     [Header("Databases")]
     public NPCDatabase npcDatabase; // <--- WAJIB ADA
@@ -15,6 +30,7 @@ public class SetUpState : GameBaseState
     public DoorController doorController; // Drag script LiftDoorController kesini
     float targetSize = 0.1889712f;
     float flipDuration = 1f;
+
 
     public Image rambutt, kepalaa, bajuu, celanaa, sepatuu;
 
@@ -41,7 +57,7 @@ public class SetUpState : GameBaseState
     [Range(0f, 1f)] public float distractionSimilarity = 0.5f;
 
     [Header("Time Settings")]
-    public float timePerNPC = 3.0f;
+    public float timePerNPC = 5f;
     private float currentTimer;
 
     [Header("UI References")]
@@ -54,9 +70,14 @@ public class SetUpState : GameBaseState
     // --- LOGIC FLAGS ---
     public bool targetdone = false;      // Ditandai TRUE jika pemain memilih BENAR/SALAH (Logika klik diatur PlayerCamera)
     private bool isSequenceActive = false; // Pengunci agar Update tidak jalan saat animasi pintu/jalan
+    private bool hasTriggeredStop = false;
+
+    private GameStateManager cachedGameState;
 
     // List untuk melacak NPC yang hidup agar bisa disuruh keluar nanti
     private List<GameObject> currentNPCs = new List<GameObject>();
+
+
 
 
     #region EnterState
@@ -67,10 +88,56 @@ public class SetUpState : GameBaseState
     public override void EnterState(GameStateManager gamestate)
     {
         Debug.Log("--- MASUK SETUP: MEMULAI SEQUENCE ---");
+        cachedGameState = gamestate; // Simpan referensi
+                                     // [FIX 1] Cek 'cam' langsung, bukan 'pm'
 
-        // Mulai rangkaian animasi masuk sebagai Coroutine
-        // Kita pinjam 'gamestate' (MonoBehaviour) untuk menjalankan Coroutine
+        if (GameDifficultyManager.Instance != null)
+        {
+            GameDifficultyManager.Instance.IncrementRound();
+
+            // 2. AMBIL SETTINGAN BARU DARI MANAGER
+            // Update Max Stress Player
+            float newMaxStress = GameDifficultyManager.Instance.GetCurrentMaxStress();
+            int newNPCCount = GameDifficultyManager.Instance.GetNPCCount();
+            float newTime = GameDifficultyManager.Instance.GetTimePerNPC();
+            int colorsFound = 0;
+            if (GameColorManager.Instance != null) colorsFound = GameColorManager.Instance.GetUnlockedColorsCount();
+
+            // -----------------------------------------------------
+            // [DEBUG LOG] CEK DISINI APAKAH LOGIC BERJALAN
+            // -----------------------------------------------------
+            string logMsg = $"<color=yellow><b>=== ROUND {GameDifficultyManager.Instance.currentRound} STARTED ===</b></color>\n";
+            logMsg += $"🔓 Warna Ditemukan: <color=cyan>{colorsFound}</color>\n";
+            logMsg += $"📉 Max Stress Player: <color=red>{newMaxStress}</color> (Makin kecil makin susah)\n";
+            logMsg += $"👥 Jumlah NPC: <color=green>{newNPCCount}</color> (Makin banyak makin susah)\n";
+            logMsg += $"⏱️ Waktu per NPC: <color=orange>{newTime}</color> (Makin kecil makin cepat)";
+
+            Debug.Log(logMsg);
+
+            // Cari script SistemNapas di player (atau drag di inspector biar performa bagus)
+            SistemNapas napasScript = FindObjectOfType<SistemNapas>();
+            if (napasScript != null)
+            {
+                napasScript.SetMaxStress(newMaxStress); // Kita buat fungsi ini nanti di step 3
+                Debug.Log($"DIFFICULTY: Max Stress set to {newMaxStress}");
+            }
+
+            // Update Logic Game (NPC & Time)
+            numberOfOptions = GameDifficultyManager.Instance.GetNPCCount();
+            timePerNPC = GameDifficultyManager.Instance.GetTimePerNPC();
+            distractionSimilarity = GameDifficultyManager.Instance.GetDistractionSimilarity();
+
+            Debug.Log($"DIFFICULTY: Round {GameDifficultyManager.Instance.currentRound} | NPC: {numberOfOptions} | Time: {timePerNPC}s");
+        }
+        hasTriggeredStop = false; // Reset flag stop biar bisa foto lagi ronde depan
+        if (cam != null)
+        {
+            Debug.Log($"[LISTENER] Saya SetUpState. Saya akan subscribe ke PhotoMechanic dengan ID: {cam.GetInstanceID()}");
+            PhotoMechanic.OnCekrek += HandleCekrek;
+        }
+        // Mulai rangkaian animasi masuk
         gamestate.StartCoroutine(EntrySequence(gamestate));
+
     }
     #endregion
 
@@ -98,49 +165,119 @@ public class SetUpState : GameBaseState
             }
         }
 
-        do
-        {
-            targetFloor = UnityEngine.Random.Range(minFloor, maxFloor + 1);
-        } while (targetFloor == startFloor);
+        // numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
+        float totalTimeNeeded = numberOfOptions * timePerNPC;
 
+        currentTimer = totalTimeNeeded;
+
+        // -----------------------------------------------------------
+        // [PERBAIKAN LOGIKA] Jarak ditentukan Waktu, Bukan Random
+        // -----------------------------------------------------------
+
+        // Tetapkan kecepatan lift yang "Enak" dilihat (Constant)
+        // Misal: 1 lantai butuh 1.5 detik (sesuai variabel di inspector)
+        // Kita percepat sedikit (-0.2f) sebagai buffer agar lift sampai duluan sebelum timer habis
+        float targetSpeed = secondsPerFloor;
+        float safeTime = Mathf.Max(1f, totalTimeNeeded - 0.5f); // Safety buffer
+
+        // Hitung berapa lantai yang BISA ditempuh dalam waktu tersebut?
+        // Contoh: 11.5 detik / 1.5 detik = 7.6 lantai -> Dibulatkan jadi 8 lantai
+        int floorDistance = Mathf.RoundToInt(safeTime / targetSpeed);
+
+        // Pastikan jarak minimal 1 lantai (biar gak diam)
+        if (floorDistance < 1) floorDistance = 1;
+
+        // -----------------------------------------------------------
+        // 3. Tentukan Arah & Target Lantai (Cek Mentok Atas/Bawah)
+        // -----------------------------------------------------------
+
+        // Cek apakah kalau naik bakal nabrak atap (MaxFloor)?
+        bool canGoUp = (startFloor + floorDistance) <= maxFloor;
+        // Cek apakah kalau turun bakal nabrak tanah (MinFloor)?
+        bool canGoDown = (startFloor - floorDistance) >= minFloor;
+
+        if (canGoUp && canGoDown)
+        {
+            // Kalau bisa dua arah, pilih random (Naik atau Turun)
+            targetFloor = (UnityEngine.Random.value > 0.5f) ? (startFloor + floorDistance) : (startFloor - floorDistance);
+        }
+        else if (canGoUp)
+        {
+            // Kalau cuma bisa naik (misal dari lantai 1)
+            targetFloor = startFloor + floorDistance;
+        }
+        else
+        {
+            // Kalau cuma bisa turun (misal dari lantai paling atas)
+            targetFloor = startFloor - floorDistance;
+        }
+
+        // -----------------------------------------------------------
+        // 4. Hitung Ulang Speed Presisi (Finishing Touch)
+        // -----------------------------------------------------------
+        // Karena pembulatan RoundToInt tadi, waktu tempuhnya mungkin geser sedikit.
+        // Kita kunci lagi speednya supaya PAS BANGET dengan safety time.
+
+        float finalDistance = Mathf.Abs(targetFloor - startFloor);
+        secondsPerFloor = safeTime / finalDistance;
+
+        Debug.Log($"LOGIC: NPC {numberOfOptions} | Waktu {totalTimeNeeded}s | Jarak {finalDistance} Lt | Target Lantai {targetFloor}");
+
+        // Setup Visual
         currentFloorFloat = startFloor;
         currentDisplayFloor = startFloor;
-
-        // Tampilkan UI Awal: "5 -> 12"
         UpdateFloorUI(false);
 
-        // --- ATAU ---
-        // Jika kamu ingin waktunya tetap bergantung jumlah NPC seperti request sebelumnya:
-        numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
+        // currentFloorFloat = startFloor;
+        // currentDisplayFloor = startFloor;
 
-        // Kita balik logikanya: Waktu ditentukan NPC, Lantai menyesuaikan Waktu
-        float totalTimeNeeded = numberOfOptions * 3.0f; // Misal 3 detik per NPC
+        // // Tampilkan UI Awal: "5 -> 12"
+        // //  UpdateFloorUI(false);
 
+        // // --- ATAU ---
+        // // Jika kamu ingin waktunya tetap bergantung jumlah NPC seperti request sebelumnya:
+        // numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
+
+        // // Kita balik logikanya: Waktu ditentukan NPC, Lantai menyesuaikan Waktu
+        // float totalTimeNeeded = numberOfOptions * timePerNPC; // Misal 3 detik per NPC
+        // currentTimer = totalTimeNeeded;
+
+        // do
+        // {
+        //     targetFloor = UnityEngine.Random.Range(minFloor, maxFloor + 1);
+        // } while (targetFloor == startFloor);
+
+        // float floorDistance = Mathf.Abs(targetFloor - startFloor);
+        // secondsPerFloor = totalTimeNeeded / floorDistance;
+
+        // currentFloorFloat = startFloor;
+        // currentDisplayFloor = startFloor;
+        // UpdateFloorUI(false);
         // Kita cari lantai tujuan yang jaraknya pas dengan waktu tersebut
         // Arah random (Naik atau Turun)
-        int direction = (UnityEngine.Random.value > 0.5f) ? 1 : -1;
+        // int direction = (UnityEngine.Random.value > 0.5f) ? 1 : -1;
 
-        // Hitung berapa lantai yang harus dilewati
-        int floorDistance = Mathf.CeilToInt(totalTimeNeeded / secondsPerFloor);
+        // // Hitung berapa lantai yang harus dilewati
+        // int floorDistance = Mathf.CeilToInt(totalTimeNeeded / secondsPerFloor);
 
-        targetFloor = startFloor + (floorDistance * direction);
+        // targetFloor = startFloor + (floorDistance * direction);
 
-        // Cek batasan (Clamping) agar tidak minus atau kelebihan
-        if (targetFloor > maxFloor)
-        {
-            targetFloor = startFloor - floorDistance; // Kalau mentok atas, paksa turun
-        }
-        else if (targetFloor < minFloor)
-        {
-            targetFloor = startFloor + floorDistance; // Kalau mentok bawah, paksa naik
-        }
+        // // Cek batasan (Clamping) agar tidak minus atau kelebihan
+        // if (targetFloor > maxFloor)
+        // {
+        //     targetFloor = startFloor - floorDistance; // Kalau mentok atas, paksa turun
+        // }
+        // else if (targetFloor < minFloor)
+        // {
+        //     targetFloor = startFloor + floorDistance; // Kalau mentok bawah, paksa naik
+        // }
 
-        // Update currentDisplay lagi incase logic berubah
-        UpdateFloorUI(false);
+        // // Update currentDisplay lagi incase logic berubah
+        // UpdateFloorUI(false);
 
 
-        numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
-        currentTimer = numberOfOptions * timePerNPC;
+        // numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
+        // currentTimer = numberOfOptions * timePerNPC;
 
         // 1. Generate Visual Target (Model Rambut/Baju/dll)
         SmartClueManager.Instance.GenerateTarget();
@@ -171,6 +308,7 @@ public class SetUpState : GameBaseState
 
         // 3. Update UI (Sekarang UI sudah bisa baca data dari Manager dengan benar)
         UpdateMissionText(targetData);
+
 
         // 4. Random Kursi
         List<int> seatIndexes = new List<int>();
@@ -265,6 +403,7 @@ public class SetUpState : GameBaseState
                                         visualCtrl.AnimateFlip();
 
 
+
                                     }
                                 }
                             });
@@ -273,6 +412,7 @@ public class SetUpState : GameBaseState
         }
         // C. BUKA PINTU
         doorController.OpenDoors();
+        am.PlayRandomLoopingSFX(am.AmbienceSfx);
         yield return new WaitForSeconds(1.0f); // Tunggu pintu terbuka
         // D. SPAWN & JALAN MASUK (PERBAIKAN VISUAL)
         float walkToDoorTime = 2.0f; // Waktu jalan dari lorong ke pintu
@@ -284,12 +424,25 @@ public class SetUpState : GameBaseState
 
         // E. TUTUP PINTU
         if (doorController != null) doorController.CloseDoors();
+        am.PlaySFX(am.tingtung);
+        am.StopRandomLoopingSFX(am.AmbienceSfx);
+        am.PlayRandomLoopingSFX(am.npc);
+        am.PlayLoopingSFX(am.Ambiance4);
+        cam.StartConstantShake(0.05f);
+        pm.UnlockCameraFeature();
+        bookOpenObj.SetActive(true);
+        bookClosedObj.SetActive(false);
         yield return new WaitForSeconds(1.0f);
 
         // F. MULAI GAMEPLAY
+
+
         Debug.Log($"LIFT BERGERAK: {startFloor} menuju {targetFloor}");
         if (UI != null) UI.SetActive(true);
+
         isSequenceActive = false;
+        bookOpenObj.SetActive(true);
+        bookClosedObj.SetActive(false);
     }
     #endregion
 
@@ -313,18 +466,15 @@ public class SetUpState : GameBaseState
             if (currentTimer <= 0)
             {
                 currentTimer = 0;
+                bookClosedObj.SetActive(true);
+                bookOpenObj.SetActive(false);
                 Debug.Log("WAKTU HABIS!");
                 // Trigger Sequence Keluar (Time Up / Salah)
                 gamestate.StartCoroutine(ExitSequence(gamestate));
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Debug.Log("DEBUG: REM MENDADAK DI TEKAN!");
-            //  targetdone = true;
-            gamestate.StartCoroutine(EmergencyStopSequence(gamestate));
-        }
+
 
         if (!targetdone)
         {
@@ -350,8 +500,6 @@ public class SetUpState : GameBaseState
                 Debug.Log("SAMPAI TUJUAN (WAKTU HABIS)!");
                 targetdone = true; // Trigger Sequence Keluar
 
-                // Kurangi nyawa karena gagal menemukan target sebelum sampai
-                if (gm != null) gm.nyawa--;
             }
         }
         else
@@ -359,6 +507,7 @@ public class SetUpState : GameBaseState
             // Jika targetdone = true (Entah karena Spasi, Waktu Habis, atau Ketemu Target)
             // Langsung masuk sequence keluar
             gamestate.StartCoroutine(ExitSequence(gamestate));
+            //  pm.SetInputActive(false);
 
             // Reset flag biar gak dipanggil berkali-kali
             targetdone = false;
@@ -373,15 +522,21 @@ public class SetUpState : GameBaseState
     // ---------------------------------------------------------
     IEnumerator ExitSequence(GameStateManager gamestate)
     {
+        pm.LockCameraFeature();
+        bookOpenObj.SetActive(false);
+        bookClosedObj.SetActive(true);
+        am.StopRandomLoopingSFX(am.npc);
         isSequenceActive = true; // Kunci lagi
         if (UI != null) UI.SetActive(false); // Sembunyikan UI Misi
         UpdateFloorUI(true);
         startFloor = currentDisplayFloor;
         Debug.Log($"Lift Berhenti di Lantai {startFloor}");
         // A. BUKA PINTU
+        am.PlaySFX(am.tingtung);
+        am.PlayRandomLoopingSFX(am.AmbienceSfx);
         if (doorController != null) doorController.OpenDoors();
+        cam.StopShake();
         yield return new WaitForSeconds(1.0f);
-
         // B. NPC JALAN KELUAR
         float moveOutDuration = 1.9f;
         foreach (GameObject npc in currentNPCs)
@@ -406,6 +561,8 @@ public class SetUpState : GameBaseState
             }
             void lurus()
             {
+
+
                 LeanTween.scaleX(npc, 0f, 1f).setEase(LeanTweenType.easeOutElastic);
                 LeanTween.scaleX(npc, 0.1889712f, 1f).setEase(LeanTweenType.easeOutElastic);
                 npc.transform.rotation = Quaternion.identity;
@@ -419,7 +576,10 @@ public class SetUpState : GameBaseState
 
         // C. TUTUP PINTU (Sesuai request: NPC masih ada di luar, belum didestroy)
         if (doorController != null) doorController.CloseDoors();
+        am.StopRandomLoopingSFX(am.AmbienceSfx);
+        am.StopLoopingSFX(am.Ambiance4);
         yield return new WaitForSeconds(3.0f); // Tunggu tertutup rapat
+
 
         // D. HAPUS NPC (Sekarang aman karena pintu tertutup)
         foreach (GameObject npc in currentNPCs)
@@ -435,7 +595,7 @@ public class SetUpState : GameBaseState
 
         // if (waktuHabis) gm.nyawa--; (Opsional logika tambahan)
 
-        if (gm != null && gm.nyawa <= 0)
+        if (GameDifficultyManager.Instance.nyawa == 0)
         {
             gamestate.SwitchState(gamestate.gameoverstate);
         }
@@ -466,12 +626,15 @@ public class SetUpState : GameBaseState
         npcObj.name = isTarget ? "NPC_TARGET" : "NPC_Distraction";
     }
 
+
     void UpdateMissionText(NPCStyleData data)
     {
         if (data == null) return;
 
+
         // Ambil index bagian tubuh yang dicari dari Manager
         int targetPart = GameColorManager.Instance.currentRoundBodyPartIndex;
+
         if (data.celana != null)
             Debug.Log("TARGET CELANA ADALAH: " + data.celana.name + " | Sprite: " + data.celana.visual.name);
         // -----------------
@@ -485,7 +648,7 @@ public class SetUpState : GameBaseState
                 img.sprite = sprite;
                 img.gameObject.SetActive(true);
                 // Jika ini target -> HITAM, Jika bukan -> PUTIH
-                img.color = isTargetPart ? Color.black : Color.white;
+                img.color = isTargetPart ? Color.gray : Color.white;
             }
             else if (img != null) img.gameObject.SetActive(false);
         }
@@ -494,7 +657,7 @@ public class SetUpState : GameBaseState
         SetClueVisual(bajuu, data.baju?.visual, targetPart == 1); // Cek Baju
         SetClueVisual(celanaa, data.celana?.visual, targetPart == 2); // Cek Celana
         SetClueVisual(sepatuu, data.sepatu?.visual, targetPart == 3); // Cek Sepatu
-        SetClueVisual(kepalaa, data.kepala?.visual, false); // Kepala selalu putih (bukan clue)
+                                                                      // Kepala selalu putih (bukan clue)
     }
 
     void Shuffle<T>(List<T> list)
@@ -526,6 +689,8 @@ public class SetUpState : GameBaseState
             }
         }
     }
+
+
     NPCInstanceData ConvertStyleToInstance(NPCStyleData style)
     {
         NPCInstanceData newData = new NPCInstanceData();
@@ -542,11 +707,12 @@ public class SetUpState : GameBaseState
         }
 
         // 2. Copy Model Fisik
+        newData.ekspresiModel = style.ekspresi;
         newData.rambutModel = style.rambut;
         newData.bajuModel = style.baju;
         newData.celanaModel = style.celana;
         newData.sepatuModel = style.sepatu;
-        newData.kepalaModel = style.kepala;
+
 
         // 3. Isi warna random dulu untuk semua (selain winning color)
         newData.rambutColorIndex = GetRandomDifferentColor(winningColorIndex);
@@ -584,10 +750,11 @@ public class SetUpState : GameBaseState
         {
             // Ambil model acak dari database
             newData.rambutModel = npcDatabase.GetRandomHair();
+            newData.ekspresiModel = npcDatabase.GetRandomEkspresi();
             newData.bajuModel = npcDatabase.GetRandomShirt();
             newData.celanaModel = npcDatabase.GetRandomPants();
             newData.sepatuModel = npcDatabase.GetRandomShoes();
-            newData.kepalaModel = npcDatabase.GetRandomHead();
+
         }
         else
         {
@@ -602,6 +769,25 @@ public class SetUpState : GameBaseState
 
         return newData;
     }
+
+    public void OnPhotoDone(GameStateManager gamestate)
+    {
+        if (hasTriggeredStop) return; // Cegah double call
+        hasTriggeredStop = true;
+
+        Debug.Log("SetupState: Menerima laporan foto selesai. Menjalankan Sequence...");
+
+        // Jalankan logika Emergency Stop / Pindah State
+        gamestate.StartCoroutine(EmergencyStopSequence(gamestate));
+    }
+
+    private void HandleCekrek()
+    {
+        Debug.Log("SetUpState: Menerima sinyal Cekrek!");
+
+        OnPhotoDone(cachedGameState);
+
+    }
     #endregion
 
     #region StopSequence
@@ -610,6 +796,9 @@ public class SetUpState : GameBaseState
     IEnumerator EmergencyStopSequence(GameStateManager gamestate)
     {
         // 1. Matikan UI & Logic Update
+        pm.LockCameraFeature();
+        bookOpenObj.SetActive(false);
+        bookClosedObj.SetActive(true);
 
         // 1. Matikan UI & Logic Update
         isSequenceActive = true;
@@ -631,11 +820,12 @@ public class SetUpState : GameBaseState
 
 
                     visual.SetDirection(true); // Ganti sprite ke WAJAH (Depan)
-
+                    visual.ChangeToSpecificExpression(ekspresiMarahSO);
+                    am.PlaySFX(am.marah);
 
 
                 }
-                npc.transform.rotation = Quaternion.identity; // Pastikan tegak
+                npc.transform.LookAt(playertransform); // Pastikan tegak
             }
         }
 
@@ -673,4 +863,16 @@ public class SetUpState : GameBaseState
     #endregion
 
     public override void OnEnterState(GameStateManager gamestate) { }
+
+    public override void ExitState(GameStateManager gamestate)
+    {
+
+        // [FIX 2] Unsubscribe dari 'cam', cek 'cam' bukan 'pm'
+        if (cam != null)
+        {
+            PhotoMechanic.OnCekrek -= HandleCekrek;
+        }
+
+        cachedGameState = null;
+    }
 }

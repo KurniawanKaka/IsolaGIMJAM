@@ -6,21 +6,21 @@ public class NPCDatabase : ScriptableObject
 {
     [Header("Koleksi Aset")]
     public List<NPCBodyPart> hairs;
-    public List<NPCBodyPart> heads; // Jenis bentuk kepala
+    public List<NPCBodyPart> ekspresis; // Jenis bentuk kepala
     public List<NPCBodyPart> shirts;
     public List<NPCBodyPart> pants;
     public List<NPCBodyPart> shoes;
+
 
     public NPCBodyPart GetRandomHair()
     {
         if (hairs == null || hairs.Count == 0) return null;
         return hairs[Random.Range(0, hairs.Count)];
     }
-
-    public NPCBodyPart GetRandomHead()
+    public NPCBodyPart GetRandomEkspresi()
     {
-        if (heads == null || heads.Count == 0) return null;
-        return heads[Random.Range(0, heads.Count)];
+        if (ekspresis == null || ekspresis.Count == 0) return null;
+        return ekspresis[Random.Range(0, ekspresis.Count)];
     }
 
     public NPCBodyPart GetRandomShirt()

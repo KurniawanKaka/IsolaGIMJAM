@@ -915,15 +915,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   musicSource: {fileID: 1738010529}
   SFXSource: {fileID: 543645585}
-  Background: {fileID: 8300000, guid: df1d9d38042614845b8cbecaa364fcab, type: 3}
-  LiftSfx:
-  - {fileID: 8300000, guid: 1e2d13afb19e2a541816184c46ade1fe, type: 3}
-  - {fileID: 8300000, guid: e216b324c69f3c549907e1079ec9498e, type: 3}
-  - {fileID: 8300000, guid: d5e5f6dc13d613d4bb9141b46cca76a8, type: 3}
-  SecondSfxList:
-  - {fileID: 8300000, guid: 29eb6c8213ba7ff4c8c897e8a1b7f087, type: 3}
-  - {fileID: 8300000, guid: e2701964470e3714ea1234ec82b52cea, type: 3}
-  - {fileID: 8300000, guid: 70ef3ea1e48742647b6301ae640cf7a9, type: 3}
+  Epilog: {fileID: 8300000, guid: f6765f6e072023840959fce4120ebd5c, type: 3}
+  Lift: {fileID: 8300000, guid: 6fd445f38fabe234298e96cea5e649ea, type: 3}
+  Mainmenu: {fileID: 8300000, guid: 07a4268b65ff98f49b4e7ec4be51c8db, type: 3}
+  Prolog: {fileID: 8300000, guid: d40c268201bcb1d4bb44a7e19152a038, type: 3}
+  Ambiance1: {fileID: 8300000, guid: f9c113064b80dfa47bfb96dd586f3400, type: 3}
+  Ambiance2: {fileID: 8300000, guid: c4744f803c645af45925e8768dc0d756, type: 3}
+  Ambiance3: {fileID: 8300000, guid: db2cbbdcc0fb5c044b7c3a2de6e844e0, type: 3}
+  Ambiance4: {fileID: 8300000, guid: b1e241d3ca4c28540a2825182dcbb7b3, type: 3}
+  Ambiance5: {fileID: 8300000, guid: cf71056238263284ca26c0994b406d4c, type: 3}
+  Liftbukatutup: {fileID: 8300000, guid: 2e35b2630ba6cb547b2e2b54deabfa92, type: 3}
+  Liftbell: {fileID: 8300000, guid: c2032907d93d9d44095218c93b78e3e4, type: 3}
+  Shutter: {fileID: 8300000, guid: d5e5f6dc13d613d4bb9141b46cca76a8, type: 3}
+  PintuBuka: {fileID: 8300000, guid: 44b15a0d52fa3d24d9ef97d365e31e60, type: 3}
+  PintuDikit: {fileID: 8300000, guid: 39272510dab617546911840b1b82901a, type: 3}
+  PintuTutup: {fileID: 8300000, guid: 1bbe233909a21be47a85a7331297eafd, type: 3}
+  Nafasmin: {fileID: 8300000, guid: 199969bcd592f1c4998578acdd26cd54, type: 3}
+  Nafasmid: {fileID: 8300000, guid: 5c4e1e576d4fa2c4aa49498eeedec51d, type: 3}
+  Nafasmax: {fileID: 8300000, guid: bd01f7635dbdfa3499d289129c8789d9, type: 3}
+  NpcBatuk: {fileID: 8300000, guid: 52658062d3aa7b54f8ddfc0537e3cadc, type: 3}
+  NpcBersin: {fileID: 8300000, guid: fa94e4991eeb9fa45932595cb9d7ed9c, type: 3}
+  NpcGaruk: {fileID: 8300000, guid: 6d8ea93876a39a549b6232ecd38a589e, type: 3}
+  NpcHmm: {fileID: 8300000, guid: 2867b3d04d58b52409e65fb1fd499003, type: 3}
+  NpcHitut: {fileID: 8300000, guid: 418dba0526c205c4999cb1de3a4e0cdf, type: 3}
+  NpcLapar: {fileID: 8300000, guid: 2486494d04567824d91bb804449f987f, type: 3}
+  NpcKetawa: {fileID: 8300000, guid: e96eb341e2d46e94e86d8c2e37ae18e5, type: 3}
+  NpcBukaMakanan: {fileID: 8300000, guid: 9bcdfd117d3c1694da683dd951da191d, type: 3}
+  NpcMakan: {fileID: 8300000, guid: 38359b50b1a3cbf4aaa3efdc73d5ce32, type: 3}
+  NpcNgantuk: {fileID: 8300000, guid: 5153b79fe7dd18f448c292922482d821, type: 3}
+  LiftgerakSfx:
+  - {fileID: 8300000, guid: 227867f052f3b424f8e2b6a6f3874e0c, type: 3}
+  - {fileID: 8300000, guid: 7dfce50158b014941abb99641289406a, type: 3}
+  - {fileID: 8300000, guid: 34fccda1e80470f4b99cb68f21a060e9, type: 3}
+  - {fileID: 8300000, guid: 1f19c4e1391a6f94b940a78065a7ea7f, type: 3}
+  ButtonSfx:
+  - {fileID: 8300000, guid: 58494ac1487682646a6368d1452f1f08, type: 3}
+  - {fileID: 8300000, guid: 2f1ed942e539e0946841b9984287f9fd, type: 3}
+  - {fileID: 8300000, guid: 7d07795f2617bd34b92fc82c0e66f8f7, type: 3}
+  HimbauanSfx:
+  - {fileID: 8300000, guid: a173a5d2b118ed6489850ff8345dd2df, type: 3}
+  - {fileID: 8300000, guid: a81c5fa221764c14e9ae34fb46ccfb28, type: 3}
+  - {fileID: 8300000, guid: b8a49234d6208de47a1e6dbf7f405251, type: 3}
+  LifttingtungSfx:
+  - {fileID: 8300000, guid: a173a5d2b118ed6489850ff8345dd2df, type: 3}
+  - {fileID: 8300000, guid: a81c5fa221764c14e9ae34fb46ccfb28, type: 3}
+  - {fileID: 8300000, guid: b8a49234d6208de47a1e6dbf7f405251, type: 3}
+  Whoosh:
+  - {fileID: 8300000, guid: c471598ef500fe84b833facbd70d487b, type: 3}
+  - {fileID: 8300000, guid: 5cd2d5ddd2eac8643bcd12ffe56306a9, type: 3}
+  - {fileID: 8300000, guid: dd86f03989e50a2449ff3322d0fae19c, type: 3}
 --- !u!1 &1637032248
 GameObject:
   m_ObjectHideFlags: 0

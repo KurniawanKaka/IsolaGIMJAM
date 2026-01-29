@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad05b79dd20fb0f4f88c40b87138cf2f, type: 3}
+  m_Name: FixDatabase
+  m_EditorClassIdentifier: 
+  hairs:
+  - {fileID: 11400000, guid: cd6907795343bc64c977f29aab491f7d, type: 2}
+  - {fileID: 11400000, guid: 47b5c2e73a9e7b64cb157ed1ddfefcd8, type: 2}
+  - {fileID: 11400000, guid: 94924240893cf7540a56d9b4b3943bac, type: 2}
+  ekspresis:
+  - {fileID: 11400000, guid: 8b9952b7337d9454ca83d7aef5cd30a9, type: 2}
+  - {fileID: 11400000, guid: 37513f78920de8f48b604390ed7b6974, type: 2}
+  - {fileID: 11400000, guid: 784aab52665fc91418c6c0f54b79e040, type: 2}
+  - {fileID: 11400000, guid: 960ac755d39d0d2458fd2aa0b449bf69, type: 2}
+  - {fileID: 11400000, guid: 8a8cecff0633f7d43b40a3b50b414556, type: 2}
+  - {fileID: 11400000, guid: 70479af933e6f654dafe68eaf752ebc5, type: 2}
+  shirts:
+  - {fileID: 11400000, guid: 61575a0763d14284e9b93118fe85ecf0, type: 2}
+  - {fileID: 11400000, guid: dbfddffef5a257a4284614838d67d0cb, type: 2}
+  - {fileID: 11400000, guid: d82b7f52c1ef81a4499716517f0a676f, type: 2}
+  pants:
+  - {fileID: 11400000, guid: 2dae9cbe7a1c374439ba08be74427a0a, type: 2}
+  - {fileID: 11400000, guid: 1d147a5b66d20a84a872afbd6ad2b27b, type: 2}
+  - {fileID: 11400000, guid: b5bf2e7192970154abfe9ae29741e14c, type: 2}
+  shoes:
+  - {fileID: 11400000, guid: 379095823f89b334fa567917d83cb561, type: 2}
+  - {fileID: 11400000, guid: c4e8f1938c6091d4c934b8f333ea2a2b, type: 2}

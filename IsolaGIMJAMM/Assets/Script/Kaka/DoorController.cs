@@ -6,6 +6,8 @@ public class DoorController : MonoBehaviour
     public Transform leftDoor;
     public Transform rightDoor;
 
+    [SerializeField] AudioManager am;
+
     [Header("Settings")]
     public float openDistance = 1.5f; // Jarak geser pintu saat membuka
     public float doorSpeed = 1.0f;    // Durasi animasi
@@ -23,6 +25,7 @@ public class DoorController : MonoBehaviour
 
     public void OpenDoors()
     {
+        am.PlaySFX(am.Liftbuka);
         if (leftDoor)
             LeanTween.moveLocalX(leftDoor.gameObject, leftClosedPos.x - openDistance, doorSpeed).setEaseInCubic();
 
@@ -32,6 +35,7 @@ public class DoorController : MonoBehaviour
 
     public void CloseDoors()
     {
+        am.PlaySFX(am.liftutup);
         if (leftDoor)
             LeanTween.moveLocalX(leftDoor.gameObject, leftClosedPos.x, doorSpeed).setEaseOutQuart();
 

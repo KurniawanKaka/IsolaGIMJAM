@@ -34,7 +34,7 @@ public class DebugNPCButton : MonoBehaviour
         if (data.rambut != null) rambutImg.sprite = data.rambut.visual;
         if (data.baju != null) bajuImg.sprite = data.baju.visual;
         if (data.celana != null) celanaImg.sprite = data.celana.visual;
-        if (data.kepala != null) kepalaImg.sprite = data.kepala.visual;
+
         if (data.sepatu != null) sepatuImg.sprite = data.sepatu.visual;
 
         // Debug visual: Kasih tanda bintang kecil kalau target (Opsional, untuk cheat developer)
