@@ -1,25 +1,23 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Cinemachine;
-using UnityEngine.Rendering; // Library dasar Volume
-using UnityEngine.Rendering.Universal; // Library khusus URP
+using UnityEngine.UI;
 using System.Collections;
 
 public class DoorLogic : MonoBehaviour
 {
     [Header("Scene Settings")]
     public string nextScene;
-    public float animDuration = 0.8f;
+    public float animDuration = 1.0f;
+    public float fadeDuration = 1.5f; // Sedikit dicepetin biar nggak dragging
 
     [Header("Camera Move")]
     public CinemachineVirtualCamera vCam;
     public float startZ = -9.06f;
     public float targetZ = -3f;
 
-    [Header("Post Processing (URP)")]
-    public Volume globalVolume; // Seret Global Volume (1) ke sini
-    private Vignette vignette;
-    private ColorAdjustments colorAdjustments;
+    [Header("UI Fade")]
+    public Image fadeImage;
 
     private bool isZooming = false;
     private Vector3 initialRotation;
@@ -27,51 +25,44 @@ public class DoorLogic : MonoBehaviour
     void Start()
     {
         initialRotation = transform.localEulerAngles;
-
-        // Ambil komponen dari Profile Volume URP
-        if (globalVolume != null && globalVolume.profile.TryGet<Vignette>(out vignette))
+        if (fadeImage != null)
         {
-            vignette.intensity.value = 0.24f; // Nilai awal sesuai screenshotmu
+            fadeImage.color = new Color(0, 0, 0, 0);
+            fadeImage.raycastTarget = false;
         }
-
-        if (globalVolume != null && globalVolume.profile.TryGet<ColorAdjustments>(out colorAdjustments))
-        {
-            colorAdjustments.saturation.value = -100f; // Tetap BnW
-        }
-
-        // Set posisi Z awal kamera
-        Vector3 pos = vCam.transform.localPosition;
-        pos.z = startZ;
-        vCam.transform.localPosition = pos;
     }
 
     void OnMouseEnter()
     {
         if (isZooming) return;
-        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -25f), 0.4f).setEaseOutBack();
+        LeanTween.cancel(gameObject);
+        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -30f), 0.3f).setEaseOutBack();
     }
 
     void OnMouseExit()
     {
         if (isZooming) return;
-        LeanTween.rotateLocal(gameObject, initialRotation, 0.4f).setEaseOutQuad();
+        LeanTween.cancel(gameObject);
+        LeanTween.rotateLocal(gameObject, initialRotation, 0.3f).setEaseOutQuad();
     }
 
     void OnMouseDown()
     {
         if (!isZooming && !string.IsNullOrEmpty(nextScene))
-            StartCoroutine(DeepZoomSequence());
+            StartCoroutine(PunchyTransition());
     }
 
-    IEnumerator DeepZoomSequence()
+    IEnumerator PunchyTransition()
     {
         isZooming = true;
 
-        // 1. Pintu Terbuka
-        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -60f), animDuration).setEaseInOutExpo();
+        // 1. Pintu Terbuka (Pake Expo biar bukanya "kick" di awal)
+        LeanTween.cancel(gameObject);
+        LeanTween.rotateLocal(gameObject, new Vector3(-90f, 0, -75f), animDuration).setEaseInOutExpo();
 
-        // 2. Kamera Maju Fisik (Z)
-        LeanTween.value(gameObject, startZ, targetZ, animDuration + 0.5f)
+        // 2. Kamera Maju & Fade (Pake EaseInExpo biar makin deket pintu makin kenceng)
+        // Ini kuncinya biar nggak linear, bjir!
+        LeanTween.value(gameObject, startZ, targetZ, fadeDuration)
             .setEaseInExpo()
             .setOnUpdate((float val) => {
                 Vector3 currentPos = vCam.transform.localPosition;
@@ -79,16 +70,17 @@ public class DoorLogic : MonoBehaviour
                 vCam.transform.localPosition = currentPos;
             });
 
-        // 3. Vignette Fade In (Makin Gelap ke angka 1)
-        if (vignette != null)
+        if (fadeImage != null)
         {
-            LeanTween.value(gameObject, 0.45f, 1f, animDuration + 0.5f)
-                .setOnUpdate((float val) => {
-                    vignette.intensity.value = val;
+            // Fadenya juga ikut dipercepat di akhir biar sinkron sama gerakan kamera
+            LeanTween.value(fadeImage.gameObject, 0f, 1f, fadeDuration)
+                .setEaseInQuart()
+                .setOnUpdate((float alpha) => {
+                    fadeImage.color = new Color(0, 0, 0, alpha);
                 });
         }
 
-        yield return new WaitForSeconds(animDuration + 1f);
+        yield return new WaitForSeconds(fadeDuration + 0.3f);
         SceneManager.LoadScene(nextScene);
     }
 }

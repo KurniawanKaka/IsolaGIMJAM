@@ -9,9 +9,12 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scenes/budi.unity
+    path: Assets/Scenes/MainMenu.unity
     guid: f25d6ee0458e91e45b062412c5219670
   - enabled: 1
     path: Assets/Scenes/budi2.unity
     guid: 61b706579d9f44a43a25f9b44148f80d
+  - enabled: 1
+    path: Assets/Scenes/LoadingScene.unity
+    guid: f5255c383f8cb32469837f61861419f3
   m_configObjects: {}
