@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Mohak
   m_EditorClassIdentifier: 
   idName: RambutMohawk
-  visual: {fileID: 21300000, guid: 059fddaf0b91d1248ac133c7797159f0, type: 3}
-  visualBack: {fileID: 21300000, guid: a57e2d1890a24ef4881b813a5b158cb2, type: 3}
+  visual: {fileID: 21300000, guid: efbd40487d83aea4ba6f52539100d8ae, type: 3}
+  visualBack: {fileID: 21300000, guid: 4de2a0e183cedbf47b1f8f1415b6171b, type: 3}

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class ItemLookDownSwitcher : MonoBehaviour
 {
@@ -6,50 +7,104 @@ public class ItemLookDownSwitcher : MonoBehaviour
     public PhotoMechanic photoScript;
     public Transform bookParent;
 
+    public AudioManager am;
+
+
     [Header("Settings")]
-    public float thresholdAngle = 47f; // Mentok di 50, jadi 47 sudah mulai switch
+    public float thresholdAngle = 47f;
     public float transitionSpeed = 8f;
 
-    [Header("Book Y Movement")]
-    public float bookYHidden = -2.07f;
-    public float bookYVisible = -0.846f;
+    [Header("Positions")]
+    public float bookYHidden = -0.407f;
+    public float bookYVisible = 0.013f;
+    public float camYOffsetMax = -0.21f;
 
-    [Header("Cam Y Movement (Offset)")]
-    public float camYOffsetMax = -1.5f;
+    public bool isFeatureUnlocked = false;
+
+
 
     private float currentRatio = 0f;
+    private Coroutine transitionRoutine;
 
-    void Update()
+    void Start()
     {
-        // 1. Cek Pitch Kamera
-        float pitch = transform.localEulerAngles.x;
-        if (pitch > 180) pitch -= 360;
 
-        // 2. Binary Switch Logic
-        float targetRatio = (pitch >= thresholdAngle) ? 1f : 0f;
-
-        // 3. Interpolasi Smooth
-        if (currentRatio != targetRatio)
-        {
-            currentRatio = Mathf.MoveTowards(currentRatio, targetRatio, Time.deltaTime * transitionSpeed);
-        }
-
-        ApplyAnimation();
     }
 
-    void ApplyAnimation()
+    public void UnlockCameraFeature()
     {
-        // Pakai SmoothStep agar transisi kerasa premium
-        float smoothCurve = currentRatio * currentRatio * (3f - 2f * currentRatio);
+        Debug.Log("Switcher: Fitur Kamera Dibuka.");
+        isFeatureUnlocked = true;
 
-        // Update Posisi Buku
-        float newBookY = Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve);
-        bookParent.localPosition = new Vector3(bookParent.localPosition.x, newBookY, bookParent.localPosition.z);
+        // Cek posisi kepala sekarang, kalau lagi lurus (tidak nunduk), langsung nyalakan
+        //  OnAimReleased();
+    }
 
-        // Update Offset Kamera
-        photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
+    // 2. UNTUK MEMATIKAN KAMERA (Lock)
+    public void LockCameraFeature()
+    {
+        Debug.Log("Switcher: Fitur Kamera Dikunci.");
+        isFeatureUnlocked = false;
 
-        // Lock Aim jika sedang nunduk
-        photoScript.canAim = (currentRatio < 0.1f);
+        // Matikan paksa di PhotoMechanic
+        if (photoScript != null)
+        {
+            photoScript.SetCanAim(false);
+
+            // Jika sedang membidik, paksa turun
+            if (photoScript.IsAiming()) photoScript.RunAim(false);
+        }
+    }
+
+    // Dipanggil dari FPSCameraController
+    public void CheckPitch(float currentPitch)
+    {
+        float target = (currentPitch >= thresholdAngle && !photoScript.IsAiming()) ? 1f : 0f;
+
+        if (target != currentRatio && transitionRoutine == null)
+        {
+            transitionRoutine = StartCoroutine(SmoothTransition(target));
+        }
+    }
+
+    // Dipanggil saat PhotoMechanic lepas klik kanan
+    public void OnAimReleased()
+    {
+        // Re-check pitching saat bidik dilepas
+        float pitch = transform.localEulerAngles.x;
+        if (pitch > 180) pitch -= 360;
+        CheckPitch(pitch);
+    }
+
+    IEnumerator SmoothTransition(float target)
+    {
+        am.PlayRandomFromList(am.Whoosh);
+        while (!Mathf.Approximately(currentRatio, target))
+        {
+            //  am.PlayRandomLoopingSFX(am.Whoosh);
+            // Jika tiba-tiba bidik pas transisi buku naik, batalkan!
+            if (photoScript.IsAiming() && isFeatureUnlocked)
+            {
+                //target = 0f;
+                photoScript.SetCanAim(true);
+            }
+
+            currentRatio = Mathf.MoveTowards(currentRatio, target, Time.deltaTime * transitionSpeed);
+
+            float smoothCurve = currentRatio * currentRatio * (3f - 2f * currentRatio);
+
+            // Update Visual
+            bookParent.localPosition = new Vector3(bookParent.localPosition.x, Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve), bookParent.localPosition.z);
+            photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
+
+            if (currentRatio < 0.1f)
+            {
+                if (isFeatureUnlocked) photoScript.SetCanAim(true);
+                else photoScript.SetCanAim(false);
+            }
+
+            yield return null;
+        }
+        transitionRoutine = null;
     }
 }

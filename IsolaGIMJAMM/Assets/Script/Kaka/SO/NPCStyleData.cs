@@ -4,7 +4,7 @@ public class NPCStyleData
 {
     public NPCBodyPart rambut;
     public NPCBodyPart baju;
-    public NPCBodyPart kepala;
+    public NPCBodyPart ekspresi;
     public NPCBodyPart celana;
     public NPCBodyPart sepatu;
 
@@ -12,7 +12,7 @@ public class NPCStyleData
     // Fungsi untuk cek apakah ini sama persis dengan target (Clone check)
     public bool IsIdentical(NPCStyleData other)
     {
-        return rambut == other.rambut && baju == other.baju && celana == other.celana && kepala == other.kepala && sepatu == other.sepatu;
+        return rambut == other.rambut && baju == other.baju && celana == other.celana && sepatu == other.sepatu;
     }
 
     // Fungsi untuk meng-copy data dari style lain
@@ -21,7 +21,6 @@ public class NPCStyleData
         rambut = other.rambut;
         baju = other.baju;
         celana = other.celana;
-        kepala = other.kepala;
         sepatu = other.sepatu;
     }
 }
