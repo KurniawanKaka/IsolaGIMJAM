@@ -68,7 +68,7 @@ public class DoorLogic : MonoBehaviour
         {
             LeanTween.cancel(doorVisual);
             // Pintu terbuka penuh (Visualnya saja yang bergerak)
-            LeanTween.rotateLocal(doorVisual, new Vector3(-90f, 0, -75f), 1.5f).setEaseInOutExpo();
+            LeanTween.rotateLocal(doorVisual, new Vector3(-90f, 0, -80f), 1.5f).setEaseInOutExpo();
         }
 
         // Gerakan Kamera
