@@ -17,7 +17,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip Ambiance4;
 
     [Header("======= SFX (Environment) =======")]
-    public AudioClip Liftbuka, liftutup, tingtung, vokaka, notif;
+    public AudioClip Liftbuka, liftutup, tingtung, vokaka, notif, marah;
     public AudioClip Liftbell;
     public AudioClip Shutter;
     public AudioClip PintuBuka;
@@ -60,7 +60,7 @@ public class AudioManager : MonoBehaviour
         // A. Cek apakah ada salah satu clip dari list ini yang sedang bunyi?
         // (Opsional: Biar tidak tumpang tindih suara lift yang sama)
         if (IsAnyClipPlayingFromList(clips)) return;
-        ForceStopAllAmbience();
+
 
         // B. Pilih Random
         int randomIndex = Random.Range(0, clips.Length);
@@ -94,27 +94,14 @@ public class AudioManager : MonoBehaviour
             }
         }
     }
-    public void ForceStopAllAmbience()
-    {
-        AudioSource[] allSources = GetComponents<AudioSource>();
 
-        foreach (var source in allSources)
-        {
-            // PENTING: Jangan matikan BGM atau SFX Utama
-            if (source == musicSource || source == SFXSource) continue;
-
-            // Matikan dan Hancurkan sisanya
-            source.Stop();
-            Destroy(source);
-        }
-    }
     public void PlayLoopingSFX(AudioClip clip, float targetVolume = 1f, float fadeDuration = 1f)
     {
         if (clip == null) return;
 
         // 1. Cek apakah suara ini sudah bunyi?
         if (IsSoundPlaying(clip)) return;
-        ForceStopAllAmbience();
+
 
         // 2. Buat AudioSource baru
         AudioSource newSource = gameObject.AddComponent<AudioSource>();

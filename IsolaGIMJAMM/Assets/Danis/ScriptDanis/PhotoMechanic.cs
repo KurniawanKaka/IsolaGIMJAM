@@ -312,7 +312,7 @@ public class PhotoMechanic : MonoBehaviour
 
                     // Kurangi Nyawa
 
-                    if (gm != null) gm.nyawa--;
+                    GameDifficultyManager.Instance.KurangiNyawa(1);
 
                     // Efek suara gagal bisa ditaruh disini
                 }
@@ -320,13 +320,10 @@ public class PhotoMechanic : MonoBehaviour
             else
             {
                 Debug.Log("Meleset: Tidak mengenai bagian tubuh NPC (Kena " + hit.collider.name + ")");
+                GameDifficultyManager.Instance.KurangiNyawa(1);
             }
         }
-        else
-        {
-            Debug.Log("Meleset: Tidak mengenai apapun.");
 
-        }
     }
     public void SetCanAim(bool state)
     {

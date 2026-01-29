@@ -11,12 +11,16 @@ public class WaitingState : GameBaseState
     public ItemLookDownSwitcher pm;
     public PhotoMechanic cam;
 
+    public GameColorManager color;
+    public GameDifficultyManager gm;
+
     // public TextMeshProUGUI tek; // Panel Kiri
     //[SerializeField] public GameObject tekk;
 
     public override void EnterState(GameStateManager gamestate)
     {
         Debug.Log("masukk, tunggu waktu habis");
+
 
         pm.LockCameraFeature();
         // 1. RESET TIMER (Penting! Agar kalau masuk state ini lagi, waktu ulang dari 10)
@@ -38,6 +42,7 @@ public class WaitingState : GameBaseState
 
         if (timer <= 0)
         {
+            checker(gamestate);
             // Pastikan timer berhenti di 0 secara visual
             timer = 0;
             // tek.text = "0";
@@ -45,8 +50,6 @@ public class WaitingState : GameBaseState
 
 
             // Cek apakah gm ditemukan untuk menghindari crash
-
-            gamestate.SwitchState(gamestate.setupstate);
             // if (gm.nyawa <= 0) // Gunakan <= untuk nyawa juga biar aman
             // {
             //     gamestate.SwitchState(gamestate.gameoverstate);
@@ -69,5 +72,23 @@ public class WaitingState : GameBaseState
     public override void ExitState(GameStateManager gamestate)
     {
 
+    }
+
+    void checker(GameStateManager gameState)
+    {
+
+        float warnaterbuka = color.GetUnlockedColorsCount();
+        if (gm.nyawa <= 0)
+        {
+            gameState.SwitchState(gameState.gameoverstate);
+        }
+        else if (warnaterbuka == 9)
+        {
+            gameState.SwitchState(gameState.endingstate);
+        }
+        else
+        {
+            gameState.SwitchState(gameState.setupstate);
+        }
     }
 }

@@ -90,6 +90,45 @@ public class SetUpState : GameBaseState
         Debug.Log("--- MASUK SETUP: MEMULAI SEQUENCE ---");
         cachedGameState = gamestate; // Simpan referensi
                                      // [FIX 1] Cek 'cam' langsung, bukan 'pm'
+
+        if (GameDifficultyManager.Instance != null)
+        {
+            GameDifficultyManager.Instance.IncrementRound();
+
+            // 2. AMBIL SETTINGAN BARU DARI MANAGER
+            // Update Max Stress Player
+            float newMaxStress = GameDifficultyManager.Instance.GetCurrentMaxStress();
+            int newNPCCount = GameDifficultyManager.Instance.GetNPCCount();
+            float newTime = GameDifficultyManager.Instance.GetTimePerNPC();
+            int colorsFound = 0;
+            if (GameColorManager.Instance != null) colorsFound = GameColorManager.Instance.GetUnlockedColorsCount();
+
+            // -----------------------------------------------------
+            // [DEBUG LOG] CEK DISINI APAKAH LOGIC BERJALAN
+            // -----------------------------------------------------
+            string logMsg = $"<color=yellow><b>=== ROUND {GameDifficultyManager.Instance.currentRound} STARTED ===</b></color>\n";
+            logMsg += $"🔓 Warna Ditemukan: <color=cyan>{colorsFound}</color>\n";
+            logMsg += $"📉 Max Stress Player: <color=red>{newMaxStress}</color> (Makin kecil makin susah)\n";
+            logMsg += $"👥 Jumlah NPC: <color=green>{newNPCCount}</color> (Makin banyak makin susah)\n";
+            logMsg += $"⏱️ Waktu per NPC: <color=orange>{newTime}</color> (Makin kecil makin cepat)";
+
+            Debug.Log(logMsg);
+
+            // Cari script SistemNapas di player (atau drag di inspector biar performa bagus)
+            SistemNapas napasScript = FindObjectOfType<SistemNapas>();
+            if (napasScript != null)
+            {
+                napasScript.SetMaxStress(newMaxStress); // Kita buat fungsi ini nanti di step 3
+                Debug.Log($"DIFFICULTY: Max Stress set to {newMaxStress}");
+            }
+
+            // Update Logic Game (NPC & Time)
+            numberOfOptions = GameDifficultyManager.Instance.GetNPCCount();
+            timePerNPC = GameDifficultyManager.Instance.GetTimePerNPC();
+            distractionSimilarity = GameDifficultyManager.Instance.GetDistractionSimilarity();
+
+            Debug.Log($"DIFFICULTY: Round {GameDifficultyManager.Instance.currentRound} | NPC: {numberOfOptions} | Time: {timePerNPC}s");
+        }
         hasTriggeredStop = false; // Reset flag stop biar bisa foto lagi ronde depan
         if (cam != null)
         {
@@ -126,7 +165,7 @@ public class SetUpState : GameBaseState
             }
         }
 
-        numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
+        // numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
         float totalTimeNeeded = numberOfOptions * timePerNPC;
 
         currentTimer = totalTimeNeeded;
@@ -362,7 +401,7 @@ public class SetUpState : GameBaseState
                                         visualCtrl.SetDirection(false);
                                         // [FIX] AnimateFlip pakai parameter 'false' (Punggung)
                                         visualCtrl.AnimateFlip();
-                                        UpdateBuku(true);
+
 
 
                                     }
@@ -391,6 +430,8 @@ public class SetUpState : GameBaseState
         am.PlayLoopingSFX(am.Ambiance4);
         cam.StartConstantShake(0.05f);
         pm.UnlockCameraFeature();
+        bookOpenObj.SetActive(true);
+        bookClosedObj.SetActive(false);
         yield return new WaitForSeconds(1.0f);
 
         // F. MULAI GAMEPLAY
@@ -398,7 +439,10 @@ public class SetUpState : GameBaseState
 
         Debug.Log($"LIFT BERGERAK: {startFloor} menuju {targetFloor}");
         if (UI != null) UI.SetActive(true);
+
         isSequenceActive = false;
+        bookOpenObj.SetActive(true);
+        bookClosedObj.SetActive(false);
     }
     #endregion
 
@@ -422,7 +466,8 @@ public class SetUpState : GameBaseState
             if (currentTimer <= 0)
             {
                 currentTimer = 0;
-                UpdateBuku(false);
+                bookClosedObj.SetActive(true);
+                bookOpenObj.SetActive(false);
                 Debug.Log("WAKTU HABIS!");
                 // Trigger Sequence Keluar (Time Up / Salah)
                 gamestate.StartCoroutine(ExitSequence(gamestate));
@@ -455,8 +500,6 @@ public class SetUpState : GameBaseState
                 Debug.Log("SAMPAI TUJUAN (WAKTU HABIS)!");
                 targetdone = true; // Trigger Sequence Keluar
 
-                // Kurangi nyawa karena gagal menemukan target sebelum sampai
-                if (gm != null) gm.nyawa--;
             }
         }
         else
@@ -480,6 +523,8 @@ public class SetUpState : GameBaseState
     IEnumerator ExitSequence(GameStateManager gamestate)
     {
         pm.LockCameraFeature();
+        bookOpenObj.SetActive(false);
+        bookClosedObj.SetActive(true);
         am.StopRandomLoopingSFX(am.npc);
         isSequenceActive = true; // Kunci lagi
         if (UI != null) UI.SetActive(false); // Sembunyikan UI Misi
@@ -550,7 +595,7 @@ public class SetUpState : GameBaseState
 
         // if (waktuHabis) gm.nyawa--; (Opsional logika tambahan)
 
-        if (gm != null && gm.nyawa <= 0)
+        if (GameDifficultyManager.Instance.nyawa == 0)
         {
             gamestate.SwitchState(gamestate.gameoverstate);
         }
@@ -645,21 +690,7 @@ public class SetUpState : GameBaseState
         }
     }
 
-    void UpdateBuku(bool asli)
-    {
 
-        if (asli)
-        {
-            bookOpenObj.SetActive(true);
-            bookClosedObj.SetActive(false);
-        }
-        else
-        {
-            bookOpenObj.SetActive(false);
-            bookClosedObj.SetActive(true);
-        }
-
-    }
     NPCInstanceData ConvertStyleToInstance(NPCStyleData style)
     {
         NPCInstanceData newData = new NPCInstanceData();
@@ -766,7 +797,8 @@ public class SetUpState : GameBaseState
     {
         // 1. Matikan UI & Logic Update
         pm.LockCameraFeature();
-
+        bookOpenObj.SetActive(false);
+        bookClosedObj.SetActive(true);
 
         // 1. Matikan UI & Logic Update
         isSequenceActive = true;
@@ -789,6 +821,7 @@ public class SetUpState : GameBaseState
 
                     visual.SetDirection(true); // Ganti sprite ke WAJAH (Depan)
                     visual.ChangeToSpecificExpression(ekspresiMarahSO);
+                    am.PlaySFX(am.marah);
 
 
                 }

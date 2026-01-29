@@ -24,6 +24,17 @@ public class GameColorManager : MonoBehaviour
         public bool isUnlocked;   // Status: Sudah ketemu belum?
     }
 
+    // Hitung berapa warna yang SUDAH terbuka
+    public int GetUnlockedColorsCount()
+    {
+        int count = 0;
+        foreach (var color in palette)
+        {
+            if (color.isUnlocked) count++;
+        }
+        return count;
+    }
+
     // List 10 Warna kamu
     public List<ColorInfo> palette = new List<ColorInfo>();
 
@@ -66,6 +77,8 @@ public class GameColorManager : MonoBehaviour
             ColorControlUI ui = FindObjectOfType<ColorControlUI>();
             if (ui != null) ui.UpdateDisplay();
         }
+
+
     }
 
     // ------------------------------------------------------------------

@@ -23,8 +23,8 @@ public class SistemNapas : MonoBehaviour
 
     [Header("Setting Stress")]
     public float stressSaatIni = 0f;
-    public float maxStress = 100f;
-    public float kenaikanPerOrang = 5f;
+    public float maxStress = 100;
+    public float kenaikanPerOrang;
     public float kekuatanScroll = 15f;
 
     [Header("Setting Visual")]
@@ -169,7 +169,14 @@ public class SistemNapas : MonoBehaviour
             colorEffect.postExposure.value = Mathf.Lerp(colorEffect.postExposure.value, targetExposure, Time.deltaTime * 5f);
         }
     }
+    public void SetMaxStress(float newValue)
+    {
 
+        Debug.Log($"<color=green>[SistemNapas]</color> Limit Stress diubah: {maxStress} -> {newValue}");
+        maxStress = newValue;
+
+
+    }
     void HandleAudioNafas()
     {
         if (am == null) return;
