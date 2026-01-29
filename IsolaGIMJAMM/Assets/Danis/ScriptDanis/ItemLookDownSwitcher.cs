@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class ItemLookDownSwitcher : MonoBehaviour
 {
@@ -7,49 +8,57 @@ public class ItemLookDownSwitcher : MonoBehaviour
     public Transform bookParent;
 
     [Header("Settings")]
-    public float thresholdAngle = 47f; // Mentok di 50, jadi 47 sudah mulai switch
+    public float thresholdAngle = 47f;
     public float transitionSpeed = 8f;
 
-    [Header("Book Y Movement")]
-    public float bookYHidden = -2.07f;
-    public float bookYVisible = -0.846f;
-
-    [Header("Cam Y Movement (Offset)")]
-    public float camYOffsetMax = -1.5f;
+    [Header("Positions")]
+    public float bookYHidden = -0.3892f;
+    public float bookYVisible = -0.179f;
+    public float camYOffsetMax = -0.21f;
 
     private float currentRatio = 0f;
+    private Coroutine transitionRoutine;
 
-    void Update()
+    // Dipanggil dari FPSCameraController
+    public void CheckPitch(float currentPitch)
     {
-        // 1. Cek Pitch Kamera
-        float pitch = transform.localEulerAngles.x;
-        if (pitch > 180) pitch -= 360;
+        float target = (currentPitch >= thresholdAngle && !photoScript.IsAiming()) ? 1f : 0f;
 
-        // 2. Binary Switch Logic
-        float targetRatio = (pitch >= thresholdAngle) ? 1f : 0f;
-
-        // 3. Interpolasi Smooth
-        if (currentRatio != targetRatio)
+        if (target != currentRatio && transitionRoutine == null)
         {
-            currentRatio = Mathf.MoveTowards(currentRatio, targetRatio, Time.deltaTime * transitionSpeed);
+            transitionRoutine = StartCoroutine(SmoothTransition(target));
         }
-
-        ApplyAnimation();
     }
 
-    void ApplyAnimation()
+    // Dipanggil saat PhotoMechanic lepas klik kanan
+    public void OnAimReleased()
     {
-        // Pakai SmoothStep agar transisi kerasa premium
-        float smoothCurve = currentRatio * currentRatio * (3f - 2f * currentRatio);
+        // Re-check pitching saat bidik dilepas
+        float pitch = transform.localEulerAngles.x;
+        if (pitch > 180) pitch -= 360;
+        CheckPitch(pitch);
+    }
 
-        // Update Posisi Buku
-        float newBookY = Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve);
-        bookParent.localPosition = new Vector3(bookParent.localPosition.x, newBookY, bookParent.localPosition.z);
+    IEnumerator SmoothTransition(float target)
+    {
+        while (!Mathf.Approximately(currentRatio, target))
+        {
+            // Jika tiba-tiba bidik pas transisi buku naik, batalkan!
+            if (photoScript.IsAiming()) target = 0f;
 
-        // Update Offset Kamera
-        photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
+            currentRatio = Mathf.MoveTowards(currentRatio, target, Time.deltaTime * transitionSpeed);
 
-        // Lock Aim jika sedang nunduk
-        photoScript.canAim = (currentRatio < 0.1f);
+            float smoothCurve = currentRatio * currentRatio * (3f - 2f * currentRatio);
+
+            // Update Visual
+            bookParent.localPosition = new Vector3(bookParent.localPosition.x, Mathf.Lerp(bookYHidden, bookYVisible, smoothCurve), bookParent.localPosition.z);
+            photoScript.yOffset = Mathf.Lerp(0, camYOffsetMax, smoothCurve);
+
+            // Sync canAim
+            photoScript.canAim = (currentRatio < 0.1f);
+
+            yield return null;
+        }
+        transitionRoutine = null;
     }
 }

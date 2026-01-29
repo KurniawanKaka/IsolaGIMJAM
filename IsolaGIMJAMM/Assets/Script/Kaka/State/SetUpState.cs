@@ -8,6 +8,9 @@ using UnityEngine.UI;
 
 public class SetUpState : GameBaseState
 {
+
+    [Header("Databases")]
+    public NPCDatabase npcDatabase; // <--- WAJIB ADA
     [Header("Door System")]
     public DoorController doorController; // Drag script LiftDoorController kesini
     float targetSize = 0.1889712f;
@@ -136,86 +139,138 @@ public class SetUpState : GameBaseState
         UpdateFloorUI(false);
 
 
-
-        // B. SIAPKAN DATA (Logic Random)
-        // Random jumlah NPC (2 sampai 6, tapi tidak melebihi jumlah kursi)
         numberOfOptions = UnityEngine.Random.Range(2, Mathf.Min(6, spawnPoints.Length + 1));
         currentTimer = numberOfOptions * timePerNPC;
 
-        // Generate Target Data
+        // 1. Generate Visual Target (Model Rambut/Baju/dll)
         SmartClueManager.Instance.GenerateTarget();
         NPCStyleData targetData = SmartClueManager.Instance.currentTarget;
-        UpdateMissionText(targetData); // Helper function di bawah
 
-        // Random Kursi & Siapa Targetnya
+        // 2. Generate Logic Rahasia (Warna & Bagian Tubuh) SEKARANG JUGA
+        if (GameColorManager.Instance != null)
+        {
+            // A. Pilih Warna yang belum unlock
+            int winningColor = GameColorManager.Instance.GetRandomLockedColorIndex();
+
+            // Cek Win Condition
+            if (winningColor == -1)
+            {
+                Debug.Log("SEMUA WARNA SUDAH TERKUMPUL!");
+                winningColor = UnityEngine.Random.Range(0, 10); // Fallback
+            }
+
+            // B. Pilih Bagian Tubuh (0-3)
+            int secretBodyPart = UnityEngine.Random.Range(1, 4);
+
+            // C. SIMPAN KE MANAGER SEBELUM UI DIPANGGIL
+            GameColorManager.Instance.currentRoundTargetColorIndex = winningColor;
+            GameColorManager.Instance.currentRoundBodyPartIndex = secretBodyPart;
+
+            Debug.Log($"LOGIC ESTABLISHED: Cari Index {winningColor} di BodyPart {secretBodyPart}");
+        }
+
+        // 3. Update UI (Sekarang UI sudah bisa baca data dari Manager dengan benar)
+        UpdateMissionText(targetData);
+
+        // 4. Random Kursi
         List<int> seatIndexes = new List<int>();
         for (int i = 0; i < spawnPoints.Length; i++) seatIndexes.Add(i);
-        Shuffle(seatIndexes); // Acak kursi
+        Shuffle(seatIndexes);
 
         List<bool> isTargetList = new List<bool>();
         isTargetList.Add(true);
         for (int i = 0; i < numberOfOptions - 1; i++) isTargetList.Add(false);
-        Shuffle(isTargetList); // Acak identitas
-
+        Shuffle(isTargetList);
 
 
         // D. SPAWN & JALAN MASUK (LeanTween)
         float moveDuration = 3f;
         float delayPerNPC = 0.1f;
 
+        // Loop Spawn NPC
         for (int i = 0; i < numberOfOptions; i++)
         {
-            // Posisi antre di belakang (Lurusan)
-            Vector3 queuePos = lurusan.position - (lurusan.forward * (i * 1.0f)); // Jarak antrian dirrenggangkan (1.0f)
+            // A. Tentukan Posisi
+            Vector3 queuePos = lurusan.position - (lurusan.forward * (i * 1.0f));
             Transform targetSeat = spawnPoints[seatIndexes[i]];
 
+            // B. Spawn & Reset Rotasi
             GameObject newNPC = UnityEngine.Object.Instantiate(npcPrefab, queuePos, Quaternion.identity, spawnContainer);
             newNPC.transform.rotation = Quaternion.Euler(0, 0, 0); // Hadap depan (ke kamera)
 
             currentNPCs.Add(newNPC);
             NPCVisualControl visualCtrl = newNPC.GetComponent<NPCVisualControl>();
-            SetupNPCData(newNPC, isTargetList[i], targetData);
 
-            // --- LOGIKA JALAN ---
-            // Delay bertingkat: Orang ke-2 jalan setelah orang ke-1 jalan agak jauh
+            // -----------------------------------------------------------------------
+            // [FIX UTAMA] LOGIKA DATA: Membedakan Target vs Random (Distraction)
+            // -----------------------------------------------------------------------
+            NPCInstanceData finalData;
+
+            if (isTargetList[i])
+            {
+                // JIKA TARGET: Convert Clue menjadi Data Warna
+                // Fungsi ini memastikan baju/rambut sesuai Clue, tapi warnanya diatur sistem
+                finalData = ConvertStyleToInstance(targetData);
+                finalData = ConvertStyleToInstance(targetData);
+
+                // Setup Identity (Agar game tahu ini target yang benar saat diklik)
+                // Pastikan fungsi helper 'SetupNPCIdentityOnly' ada di bawah script ini
+                SetupNPCIdentityOnly(newNPC, true, targetData);
+            }
+            else
+            {
+                // JIKA BUKAN TARGET: Generate Random Total
+                finalData = GenerateRandomNPC();
+
+                // Setup Identity (Agar game tahu ini SALAH jika diklik)
+                SetupNPCIdentityOnly(newNPC, false, null);
+            }
+
+            // Terapkan Visual ke NPC (Ini yang membuat NPC jadi Hitam Putih / Berwarna)
+            if (visualCtrl != null) visualCtrl.SetupVisuals(finalData);
+
+
+            // -----------------------------------------------------------------------
+            // [FIX ANIMASI] LOGIKA JALAN & FLIP
+            // -----------------------------------------------------------------------
             float myStartDelay = i * delayPerNPC;
 
             // 1. Jalan ke Pintu
             LeanTween.move(newNPC, doorStartPoint.position, 3f)
                 .setDelay(myStartDelay)
-                .setEase(LeanTweenType.easeOutSine) // Linear biar jalannya stabil di lorong
+                .setEase(LeanTweenType.easeOutSine)
                 .setOnComplete(() =>
                 {
-                    // 2. Sampai Pintu -> Langsung ke Kursi (Tanpa jeda aneh)
                     if (newNPC != null)
                     {
-                        // Opsional: Flip kartu jika diperlukan (efek visual)
+                        // [FIX] AnimateFlip harus pakai parameter 'true' (Wajah Depan)
+                        // Ini dipanggil saat sampai pintu sebelum jalan ke kursi
                         if (visualCtrl != null) visualCtrl.AnimateFlip();
 
-                        // 3. Jalan ke Kursi
+                        // 2. Jalan ke Kursi
                         LeanTween.move(newNPC, targetSeat.position, 3f)
-                            .setEase(LeanTweenType.easeInOutQuad) // Melambat saat mau duduk
+                            .setEase(LeanTweenType.easeInOutQuad)
                             .setOnComplete(() =>
                             {
-                                // 4. Sampai Kursi -> Duduk & Hadap Depan
                                 if (newNPC != null)
                                 {
-                                    newNPC.transform.position = targetSeat.position; // Pastikan posisi pas
-                                    newNPC.transform.rotation = targetSeat.rotation; // Sesuaikan rotasi kursi
+                                    // Pastikan posisi pas di kursi
+                                    newNPC.transform.position = targetSeat.position;
+                                    newNPC.transform.rotation = targetSeat.rotation;
 
-                                    // Efek Balik Badan & Bernafas
                                     if (visualCtrl != null)
                                     {
-                                        visualCtrl.AnimateFlip();      // Efek gepeng
-                                        visualCtrl.SetDirection(false); // Ganti Punggung
-                                                                        // Mulai nafas
+                                        visualCtrl.SetDirection(false);
+                                        // [FIX] AnimateFlip pakai parameter 'false' (Punggung)
+                                        visualCtrl.AnimateFlip();
+
+
                                     }
                                 }
                             });
                     }
                 });
         }
-
         // C. BUKA PINTU
         doorController.OpenDoors();
         yield return new WaitForSeconds(1.0f); // Tunggu pintu terbuka
@@ -397,79 +452,49 @@ public class SetUpState : GameBaseState
     // HELPER FUNCTIONS
     // ---------------------------------------------------------
 
-    void SetupNPCData(GameObject npcObj, bool isTarget, NPCStyleData targetData)
+    // Helper untuk mengatur identitas NPC (Nama & Komponen Identity) tanpa mengganggu Visual
+    void SetupNPCIdentityOnly(GameObject npcObj, bool isTarget, NPCStyleData data)
     {
-        // Ambil Script Controller
-        NPCVisualControl visualCtrl = npcObj.GetComponent<NPCVisualControl>();
         NPCIdentity identity = npcObj.GetComponent<NPCIdentity>();
-
-        if (isTarget)
+        if (identity != null)
         {
-            // SETUP TARGET
-            if (visualCtrl != null) visualCtrl.SetupVisuals(targetData);
-            if (identity != null) identity.SetupIdentity(targetData, true);
-            npcObj.name = "NPC_TARGET";
+            // Sesuaikan dengan script NPCIdentity kamu. 
+            // Jika script NPCIdentity kamu masih pakai 'SetupIdentity(NPCStyleData, bool)', 
+            // pastikan dia tidak mencoba mengganti visual lagi, hanya simpan data bool isTarget-nya.
+            identity.SetupIdentity(data, isTarget);
         }
-        else
-        {
-            // SETUP PENGECOH
-            NPCStyleData distraction = SmartClueManager.Instance.GenerateDistraction(distractionSimilarity);
-            if (visualCtrl != null) visualCtrl.SetupVisuals(distraction);
-            if (identity != null) identity.SetupIdentity(distraction, false);
-            npcObj.name = "NPC_Distraction";
-        }
+        npcObj.name = isTarget ? "NPC_TARGET" : "NPC_Distraction";
     }
 
     void UpdateMissionText(NPCStyleData data)
     {
+        if (data == null) return;
 
-
-        // 1. UPDATE RAMBUT
-        if (data.rambut != null)
-        {
-            rambutt.sprite = data.rambut.visual;
-            rambutt.color = Color.white; // <--- PENTING: Paksa Opacity 100%
-            rambutt.gameObject.SetActive(true); // Pastikan objek nyala
-            // rambutt.preserveAspect = true; // Opsional: Agar gambar tidak gepeng
-        }
-        else rambutt.gameObject.SetActive(false); // Sembunyikan jika data kosong
-
-        // 2. UPDATE KEPALA
-        if (data.kepala != null)
-        {
-            kepalaa.sprite = data.kepala.visual;
-            kepalaa.color = Color.white;
-            kepalaa.gameObject.SetActive(true);
-        }
-        else kepalaa.gameObject.SetActive(false);
-
-        // 3. UPDATE BAJU (Perbaikan: Pakai data.baju, BUKAN data.kepala)
-        if (data.baju != null)
-        {
-            bajuu.sprite = data.baju.visual; // <--- PERBAIKAN DISINI
-            bajuu.color = Color.white;
-            bajuu.gameObject.SetActive(true);
-        }
-        else bajuu.gameObject.SetActive(false);
-
-        // 4. UPDATE CELANA (Perbaikan: Pakai data.celana)
+        // Ambil index bagian tubuh yang dicari dari Manager
+        int targetPart = GameColorManager.Instance.currentRoundBodyPartIndex;
         if (data.celana != null)
-        {
-            celanaa.sprite = data.celana.visual; // <--- PERBAIKAN DISINI
-            celanaa.color = Color.white;
-            celanaa.gameObject.SetActive(true);
-        }
-        else celanaa.gameObject.SetActive(false);
+            Debug.Log("TARGET CELANA ADALAH: " + data.celana.name + " | Sprite: " + data.celana.visual.name);
+        // -----------------
+        // 0=Rambut, 1=Baju, 2=Celana, 3=Sepatu
 
-        // 5. UPDATE SEPATU (Perbaikan: Pakai data.sepatu)
-        if (data.sepatu != null)
+        // Helper lokal untuk mewarnai UI
+        void SetClueVisual(Image img, Sprite sprite, bool isTargetPart)
         {
-            sepatuu.sprite = data.sepatu.visual; // <--- PERBAIKAN DISINI
-            sepatuu.color = Color.white;
-            sepatuu.gameObject.SetActive(true);
+            if (img != null && sprite != null)
+            {
+                img.sprite = sprite;
+                img.gameObject.SetActive(true);
+                // Jika ini target -> HITAM, Jika bukan -> PUTIH
+                img.color = isTargetPart ? Color.black : Color.white;
+            }
+            else if (img != null) img.gameObject.SetActive(false);
         }
-        else sepatuu.gameObject.SetActive(false);
 
+        SetClueVisual(rambutt, data.rambut?.visual, false); // Cek Rambut
+        SetClueVisual(bajuu, data.baju?.visual, targetPart == 1); // Cek Baju
+        SetClueVisual(celanaa, data.celana?.visual, targetPart == 2); // Cek Celana
+        SetClueVisual(sepatuu, data.sepatu?.visual, targetPart == 3); // Cek Sepatu
+        SetClueVisual(kepalaa, data.kepala?.visual, false); // Kepala selalu putih (bukan clue)
     }
 
     void Shuffle<T>(List<T> list)
@@ -500,6 +525,82 @@ public class SetUpState : GameBaseState
                 floorUI.text = $"{currentDisplayFloor} {arrow} {targetFloor}";
             }
         }
+    }
+    NPCInstanceData ConvertStyleToInstance(NPCStyleData style)
+    {
+        NPCInstanceData newData = new NPCInstanceData();
+
+        // 1. Ambil Data yang SUDAH DITENTUKAN di EntrySequence tadi
+        int winningColorIndex = 0;
+
+        int clueBodyPart = UnityEngine.Random.Range(1, 4);
+
+        if (GameColorManager.Instance != null)
+        {
+            winningColorIndex = GameColorManager.Instance.currentRoundTargetColorIndex;
+            clueBodyPart = GameColorManager.Instance.currentRoundBodyPartIndex;
+        }
+
+        // 2. Copy Model Fisik
+        newData.rambutModel = style.rambut;
+        newData.bajuModel = style.baju;
+        newData.celanaModel = style.celana;
+        newData.sepatuModel = style.sepatu;
+        newData.kepalaModel = style.kepala;
+
+        // 3. Isi warna random dulu untuk semua (selain winning color)
+        newData.rambutColorIndex = GetRandomDifferentColor(winningColorIndex);
+        newData.bajuColorIndex = GetRandomDifferentColor(winningColorIndex);
+        newData.celanaColorIndex = GetRandomDifferentColor(winningColorIndex);
+        newData.sepatuColorIndex = GetRandomDifferentColor(winningColorIndex);
+
+
+        // 4. Timpa bagian target dengan Warna Pemenang
+        switch (clueBodyPart)
+        {
+            case 0: newData.rambutColorIndex = winningColorIndex; break;
+            case 1: newData.bajuColorIndex = winningColorIndex; break;
+            case 2: newData.celanaColorIndex = winningColorIndex; break;
+            case 3: newData.sepatuColorIndex = winningColorIndex; break;
+        }
+
+        return newData;
+    }
+
+    int GetRandomDifferentColor(int forbiddenIndex)
+    {
+        int randomColor;
+        do { randomColor = UnityEngine.Random.Range(0, 10); }
+        while (randomColor == forbiddenIndex);
+        return randomColor;
+    }
+
+    NPCInstanceData GenerateRandomNPC()
+    {
+        NPCInstanceData newData = new NPCInstanceData();
+
+        // Pastikan variabel 'npcDatabase' sudah di-drag di Inspector
+        if (npcDatabase != null)
+        {
+            // Ambil model acak dari database
+            newData.rambutModel = npcDatabase.GetRandomHair();
+            newData.bajuModel = npcDatabase.GetRandomShirt();
+            newData.celanaModel = npcDatabase.GetRandomPants();
+            newData.sepatuModel = npcDatabase.GetRandomShoes();
+            newData.kepalaModel = npcDatabase.GetRandomHead();
+        }
+        else
+        {
+            Debug.LogError("DATABASE KOSONG! Drag NPCDatabase ke slot script SetUpState di Inspector.");
+        }
+
+        // Tentukan Warna Random (0-9) untuk setiap bagian
+        newData.rambutColorIndex = UnityEngine.Random.Range(0, 10);
+        newData.bajuColorIndex = UnityEngine.Random.Range(0, 10);
+        newData.celanaColorIndex = UnityEngine.Random.Range(0, 10);
+        newData.sepatuColorIndex = UnityEngine.Random.Range(0, 10);
+
+        return newData;
     }
     #endregion
 
@@ -567,6 +668,8 @@ public class SetUpState : GameBaseState
         yield return gamestate.StartCoroutine(ExitSequence(gamestate));
 
     }
+
+    // FUNGSI HELPER: Ubah Clue jadi Data Warna
     #endregion
 
     public override void OnEnterState(GameStateManager gamestate) { }
